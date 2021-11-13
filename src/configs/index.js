@@ -21,38 +21,35 @@ export const JOB_CORE_METHODS = {
   getAppliedJobs: "getAppliedJobs",
 };
 
-export const LOCATIONS = {
-  ALL: "All cities",
-  HA_NOI: "Ha Noi",
-  HO_CHI_MINH: "Ho Chi Minh",
-  DA_NANG: "Da Nang",
-  OTHER: "Other",
+export const ROLES = {
+  ADMIN: {
+    name: "admin",
+    value: 0,
+  },
+  CENSOR: {
+    name: "censors",
+    value: 1,
+  },
+  USER: {
+    name: "users",
+    value: 2,
+  },
 };
 
-export const SKILLS = {
-  BLOCKCHAIN: "Blockchain",
-  JAVASCRIPT: "Javascript",
-  HTML_CSS: "HTML & CSS",
-  DATABASE: "Database",
-  GIT: "Git",
-  OTHER: "Other",
+export const GRADUATE_GRADE = {
+  F: 0,
+  D: 1,
+  C: 2,
+  B: 3,
+  A: 4,
 };
 
-export const CANDIDATE_MODAL_TITLE = {
-  ADD_EDUCATION: "Add Education",
-  ADD_EXPERIENCE: "Add Experience",
-  ADD_SKILL: "Add Skill",
-  ADD_PROJECT: "Add Project",
-  ADD_CERTIFICATE: "Add Certificate",
-  ADD_PRIZE: "Add Prize",
+export const GENDER = {
+  MALE: 0,
+  FEMALE: 1,
 };
 
-export const CANDIDATE_INFO_TYPE = {
-  PERSONAL_INFO: "personalInfo",
-  EDUCATION: "education",
-  EXPERIENCES: "experiences",
-  SKILLS: "skills",
-  CERTIFICATES: "certificates",
-  PROJECTS: "projects",
-  PRIZES: "prizes",
+export const CERT_STATUSES = {
+  PENDING: 0,
+  REPORTED: 1,
 };

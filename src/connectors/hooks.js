@@ -3,6 +3,8 @@ import { UnsupportedChainIdError, useWeb3React } from "@web3-react/core";
 
 import { injected } from "./index";
 import { NoEthereumProviderError } from "@web3-react/injected-connector";
+import { useActiveWeb3React } from "hooks/useActiveWeb3React";
+import { useHistory } from "react-router";
 
 export function useEagerConnect() {
   const { activate, active } = useWeb3React();
@@ -107,7 +109,9 @@ const setupDefaultNetwork = async () => {
 };
 
 export const useWallet = () => {
-  const { activate, deactivate, error } = useWeb3React();
+  const { activate, deactivate, error } = useActiveWeb3React();
+  const history = useHistory();
+
   const [currentConnector, setCurrentConnector] = useState();
 
   useEffect(() => {
@@ -134,7 +138,7 @@ export const useWallet = () => {
 
   const connect = useCallback((connector) => {
     setCurrentConnector(connector);
-    activate(connector);
+    activate(connector).then((_) => history.push("/"));
   }, []);
 
   const disconnect = useCallback(() => {

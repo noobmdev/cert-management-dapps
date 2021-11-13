@@ -9,32 +9,18 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/modal";
-import { formatEther } from "@ethersproject/units";
 import { connectors } from "connectors";
 import { useWallet } from "connectors/hooks";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import "styles/Layout.css";
 
 export const Layout = ({ children }) => {
-  const { account, isConnected, library } = useActiveWeb3React();
+  const { account, isConnected } = useActiveWeb3React();
   const { connect } = useWallet();
 
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [ETHBalacne, setETHBalance] = useState();
-
-  useEffect(() => {
-    const getBalance = async () => {
-      library
-        .getBalance(account, "latest")
-        .then((balance) =>
-          setETHBalance(parseFloat(formatEther(balance.toString())).toFixed(4))
-        );
-    };
-
-    isConnected && getBalance();
-  }, [isConnected]);
 
   return (
     <Box minH="100vh" color="white">
@@ -91,19 +77,16 @@ export const Layout = ({ children }) => {
         spacing="4"
       >
         {isConnected ? (
-          <HStack>
-            {ETHBalacne && <Button colorScheme="teal">{ETHBalacne} BNB</Button>}
-            <Link to="/candidate">
-              <Button colorScheme="teal">{account}</Button>
-            </Link>
-          </HStack>
+          <Link to="/">
+            <Button colorScheme="teal">{account}</Button>
+          </Link>
         ) : (
           <Button colorScheme="teal" onClick={onOpen}>
             Connect wallet
           </Button>
         )}
       </HStack>
-      <Box minH="calc(100vh - 7em)" px="8" py="4" className="main-contanier">
+      <Box minH="calc(100vh - 7em)" px="8" py="4" pos="relative">
         {children}
       </Box>
 
