@@ -15,6 +15,8 @@ import { useActiveWeb3React } from "hooks/useActiveWeb3React";
 import React from "react";
 import { Link } from "react-router-dom";
 import "styles/Layout.css";
+import Logo from "assets/images/logo.png";
+import { Image } from "@chakra-ui/image";
 
 export const Layout = ({ children }) => {
   const { account, isConnected } = useActiveWeb3React();
@@ -23,7 +25,7 @@ export const Layout = ({ children }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    <Box minH="100vh" color="white">
+    <Box minH="100vh">
       <div className="area">
         <ul className="circles">
           <li></li>
@@ -68,14 +70,17 @@ export const Layout = ({ children }) => {
       </Modal>
 
       <HStack
-        h="14"
+        h="24"
         px="8"
         py="4"
         align="center"
         flex="1"
-        justify="flex-end"
+        justify="space-between"
         spacing="4"
       >
+        <Link to="/">
+          <Image h="20" src={Logo} />
+        </Link>
         {isConnected ? (
           <Link to="/">
             <Button colorScheme="teal">{account}</Button>

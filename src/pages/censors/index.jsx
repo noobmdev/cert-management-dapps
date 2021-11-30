@@ -109,13 +109,11 @@ const Censors = () => {
       <Table variant="simple" size="lg">
         <Thead>
           <Tr>
-            <Th color="white">STT</Th>
-            <Th color="white">Owner's address</Th>
-            <Th color="white">Owner's info</Th>
-            <Th color="white">Certificate's info</Th>
-            <Th color="white" isNumeric>
-              Actions
-            </Th>
+            <Th>STT</Th>
+            <Th>Owner's address</Th>
+            <Th>Owner's info</Th>
+            <Th>Certificate's info</Th>
+            <Th isNumeric>Actions</Th>
           </Tr>
         </Thead>
         <Tbody>

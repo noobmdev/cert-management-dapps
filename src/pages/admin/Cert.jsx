@@ -21,49 +21,29 @@ import {
 } from "@chakra-ui/number-input";
 import { Select } from "@chakra-ui/select";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
+import { isAddress } from "@ethersproject/address";
 import { GENDER, GRADUATE_GRADE } from "configs";
-import React, { useState } from "react";
-
-const certTypes = [
-  {
-    name: "Certificate Type 1",
-  },
-  {
-    name: "Certificate Type 2",
-  },
-  {
-    name: "Certificate Type 3",
-  },
-];
-
-const certs = [
-  {
-    name: "Certificate Name 1",
-    title: "Certificate Title 1",
-    type: "Certificate Type 1",
-    total: 100,
-    minted: 15,
-  },
-  {
-    name: "Certificate Name 2",
-    title: "Certificate Title 2",
-    type: "Certificate Type 2",
-    total: 150,
-    minted: 60,
-  },
-  ,
-  {
-    name: "Certificate Name 3",
-    title: "Certificate Title 3",
-    type: "Certificate Type 1",
-    total: 100,
-    minted: 15,
-  },
-];
+import { useActiveWeb3React } from "hooks/useActiveWeb3React";
+import React, { useEffect, useState } from "react";
+import { uploadIPFS } from "services/upload-ipfs";
+import {
+  addCert,
+  addCertForm,
+  addSpecializedTraining,
+  getCertForms,
+  getSpecializedTrainings,
+} from "utils/getCertContract";
 
 const certMenu = {
-  certificateType: "CERTIFICATE TYPES",
+  certificateType: "SPECIALIZED TRAINING",
   certificates: "CERTIFICATES",
+};
+
+const modeStudies = {
+  fullTime: "Full-time",
+  partTime: "Part-time",
+  remoteFullTime: "Remote Full-time",
+  remotePartTime: "Remote Part-time",
 };
 
 const Cert = () => {
@@ -73,8 +53,125 @@ const Cert = () => {
     onOpen: onOpenMint,
     onClose: onCloseMint,
   } = useDisclosure();
+  const { account, library } = useActiveWeb3React();
 
   const [selectedItem, setSelectedItem] = useState(certMenu.certificates);
+  const [refresh, setRefresh] = useState(true);
+  const [refreshCert, setRefreshCert] = useState(true);
+
+  const [specializedTrainings, setSpecializedTrainings] = useState([]);
+  const [certs, setCerts] = useState([]);
+  const [specializedTrainingName, setSpecializedTrainingName] = useState("");
+  const [certData, setCertData] = useState({
+    specializedTraining: "",
+    modeStudy: modeStudies.fullTime,
+    total: 1,
+    year: new Date().getFullYear(),
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedCertForm, setSelectedCertForm] = useState();
+  const [certMintData, setCertMintData] = useState({
+    addr: "",
+    name: "",
+    gender: GENDER.MALE,
+    dateOfBirth: "",
+    graduateGrade: GRADUATE_GRADE.A,
+    mintWhere: "",
+  });
+
+  useEffect(() => {
+    if (library)
+      getSpecializedTrainings(library)
+        .then(setSpecializedTrainings)
+        .catch(console.error);
+  }, [library, refresh]);
+
+  useEffect(() => {
+    if (library) getCertForms(library).then(setCerts).catch(console.error);
+  }, [library, refreshCert]);
+
+  const handleAddSpecializedTraining = async () => {
+    try {
+      if (!account || !library) return;
+      if (!specializedTrainingName) return alert("Fill all required fields");
+
+      setSubmitting(true);
+      await addSpecializedTraining(library, account, [specializedTrainingName]);
+      setRefresh((pre) => !pre);
+      setSpecializedTrainingName("");
+
+      setSubmitting(false);
+      onClose();
+    } catch (error) {
+      setSubmitting(false);
+      console.error(error);
+    }
+  };
+
+  const handleAddCertForm = async () => {
+    try {
+      if (!account || !library) return;
+      if (!certData.specializedTraining)
+        return alert("Choose specialized training");
+
+      const { total, ..._certData } = certData;
+      setSubmitting(true);
+      const url = await uploadIPFS(_certData);
+      await addCertForm(library, account, [url, total]);
+      setRefreshCert((pre) => !pre);
+      setCertData({
+        specializedTraining: "",
+        modeStudy: modeStudies.fullTime,
+        total: 1,
+        year: new Date().getFullYear(),
+      });
+      setSubmitting(false);
+      onClose();
+    } catch (error) {
+      setSubmitting(false);
+      console.error(error);
+    }
+  };
+
+  const handleSubmit = () => {
+    switch (selectedItem) {
+      case certMenu.certificateType:
+        return handleAddSpecializedTraining();
+
+      case certMenu.certificates:
+        return handleAddCertForm();
+    }
+  };
+
+  const handleMintCert = async () => {
+    try {
+      if (!account || !library) return;
+      if (!selectedCertForm) return alert("Choose specialized training");
+      if (!certMintData.name || !certMintData.addr || !certMintData.mintWhere)
+        return alert("Fill all required fields");
+
+      const { addr, ..._certMintData } = certMintData;
+      if (!isAddress(addr)) return alert("Enter valid address");
+
+      setSubmitting(true);
+      const url = await uploadIPFS(_certMintData);
+      await addCert(library, account, [addr, url]);
+      setRefreshCert((pre) => !pre);
+      setCertMintData({
+        addr: "",
+        name: "",
+        gender: GENDER.MALE,
+        dateOfBirth: "",
+        graduateGrade: GRADUATE_GRADE.A,
+        mintWhere: "",
+      });
+      setSubmitting(false);
+      onClose();
+    } catch (error) {
+      setSubmitting(false);
+      console.error(error);
+    }
+  };
 
   const renderBody = () => {
     switch (selectedItem) {
@@ -83,16 +180,14 @@ const Cert = () => {
           <Table variant="simple" size="lg">
             <Thead>
               <Tr>
-                <Th color="white">STT</Th>
-                <Th color="white">Name</Th>
-                <Th color="white" isNumeric>
-                  Actions
-                </Th>
+                <Th>STT</Th>
+                <Th>Name</Th>
+                <Th isNumeric>Actions</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {certTypes.map((censor, idx) => (
-                <Tr>
+              {specializedTrainings.map((censor, idx) => (
+                <Tr key={idx}>
                   <Td>{idx + 1}</Td>
                   <Td>{censor.name}</Td>
                   <Td isNumeric>
@@ -109,29 +204,32 @@ const Cert = () => {
           <Table variant="simple" size="lg">
             <Thead>
               <Tr>
-                <Th color="white">STT</Th>
-                <Th color="white">Name</Th>
-                <Th color="white">Title</Th>
-                <Th color="white">Certificate Type</Th>
-                <Th color="white">Total</Th>
-                <Th color="white">Minted</Th>
-                <Th color="white" isNumeric>
-                  Actions
-                </Th>
+                <Th>STT</Th>
+                <Th>Specialized Training</Th>
+                <Th>Year</Th>
+                <Th>Total</Th>
+                <Th>Minted</Th>
+                <Th isNumeric>Actions</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {certs.map((censor, idx) => (
-                <Tr>
+              {certs.map((cert, idx) => (
+                <Tr key={idx}>
                   <Td>{idx + 1}</Td>
-                  <Td>{censor.name}</Td>
-                  <Td>{censor.title}</Td>
-                  <Td>{censor.type}</Td>
-                  <Td>{censor.total}</Td>
-                  <Td>{censor.minted}</Td>
+                  <Td>{cert.specializedTraining}</Td>
+                  <Td>{cert.year}</Td>
+                  <Td>{cert.total?.toString()}</Td>
+                  <Td>{cert.minted?.toString()}</Td>
                   <Td isNumeric>
                     <Button colorScheme="telegram">View</Button>
-                    <Button colorScheme="teal" mx="2" onClick={onOpenMint}>
+                    <Button
+                      colorScheme="teal"
+                      mx="2"
+                      onClick={() => {
+                        setSelectedCertForm(cert);
+                        onOpenMint();
+                      }}
+                    >
                       Mint
                     </Button>
                     <Button colorScheme="red">Disable</Button>
@@ -153,7 +251,12 @@ const Cert = () => {
         return (
           <FormControl isRequired>
             <FormLabel>Name</FormLabel>
-            <Input name="name" placeholder="Name" />
+            <Input
+              value={specializedTrainingName}
+              onChange={(e) => setSpecializedTrainingName(e.target.value)}
+              name="name"
+              placeholder="Name"
+            />
           </FormControl>
         );
 
@@ -161,35 +264,62 @@ const Cert = () => {
         return (
           <>
             <FormControl isRequired>
-              <FormLabel>Name</FormLabel>
-              <Input name="name" placeholder="Name" />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Title</FormLabel>
-              <Input name="title" placeholder="Title" />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Mode of study</FormLabel>
-              <Select>
-                <option>Full-time</option>
-                <option>Part-time</option>
-                <option>Remote Full-time</option>
-                <option>Remote Part-time</option>
+              <FormLabel>Specialized Training</FormLabel>
+              <Select
+                value={certData.specializedTraining}
+                onChange={(e) =>
+                  setCertData((pre) => ({
+                    ...pre,
+                    specializedTraining: e.target.value,
+                  }))
+                }
+              >
+                <option value="" style={{ display: "none" }}>
+                  Select specialized Training
+                </option>
+                {specializedTrainings.map((v, idx) => (
+                  <option key={idx} value={v.name}>
+                    {v.name}
+                  </option>
+                ))}
               </Select>
             </FormControl>
             <FormControl isRequired>
-              <FormLabel>Certificate Type</FormLabel>
-              <Select value={selectedItem}>
-                {new Array(3).fill("").map((k, idx) => (
-                  <option key={idx} value={k}>
-                    Certificate Type {idx + 1}
+              <FormLabel>Year</FormLabel>
+              <NumberInput
+                min={new Date().getFullYear()}
+                value={certData.year}
+                onChange={(v) => setCertData((pre) => ({ ...pre, year: +v }))}
+              >
+                <NumberInputField />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
+            </FormControl>
+            <FormControl isRequired>
+              <FormLabel>Mode of study</FormLabel>
+              <Select
+                value={certData.modeStudy}
+                onChange={(e) =>
+                  setCertData((pre) => ({ ...pre, modeStudy: e.target.value }))
+                }
+              >
+                {Object.values(modeStudies).map((v, idx) => (
+                  <option key={idx} value={v}>
+                    {v}
                   </option>
                 ))}
               </Select>
             </FormControl>
             <FormControl isRequired>
               <FormLabel>Total certificate can minted</FormLabel>
-              <NumberInput defaultValue={1} min={1}>
+              <NumberInput
+                min={1}
+                value={certData.total}
+                onChange={(v) => setCertData((pre) => ({ ...pre, total: +v }))}
+              >
                 <NumberInputField />
                 <NumberInputStepper>
                   <NumberIncrementStepper />
@@ -210,13 +340,23 @@ const Cert = () => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Add a new certificate type</ModalHeader>
+          <ModalHeader>
+            {certMenu.certificates
+              ? "Add a new certificate"
+              : "Add a new specialized training"}
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing="4">{renderModalBody()}</VStack>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="teal">Save</Button>
+            <Button
+              colorScheme="teal"
+              isLoading={submitting}
+              onClick={handleSubmit}
+            >
+              Save
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -228,55 +368,131 @@ const Cert = () => {
           <ModalHeader>Mint Certificate</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <VStack spacing="4" align="stretch">
-              <Box>Mint Certificate 1 for</Box>
-              <FormControl isRequired>
-                <FormLabel>Name</FormLabel>
-                <Input name="name" placeholder="Name" />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Gender</FormLabel>
+            {selectedCertForm && (
+              <VStack spacing="4" align="stretch">
+                <Box>
+                  Mint certificate specialized training{" "}
+                  <Box d="inline" fontSize="xl" fontWeight="bold">
+                    {selectedCertForm.specializedTraining}
+                  </Box>{" "}
+                  year{" "}
+                  <Box d="inline" fontSize="xl" fontWeight="bold">
+                    {selectedCertForm.year}
+                  </Box>{" "}
+                  for
+                </Box>
+                <FormControl isRequired>
+                  <FormLabel>Name</FormLabel>
+                  <Input
+                    value={certMintData.name}
+                    onChange={(e) =>
+                      setCertMintData((pre) => ({
+                        ...pre,
+                        name: e.target.value,
+                      }))
+                    }
+                    name="name"
+                    placeholder="Name"
+                  />
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel>Address</FormLabel>
+                  <Input
+                    value={certMintData.addr}
+                    onChange={(e) =>
+                      setCertMintData((pre) => ({
+                        ...pre,
+                        addr: e.target.value,
+                      }))
+                    }
+                    name="name"
+                    placeholder="Name"
+                  />
+                </FormControl>
 
-                <Select defaultValue="">
-                  <option value="" hidden>
-                    Choose a gender
-                  </option>
-                  {Object.keys(GENDER).map((k, idx) => (
-                    <option key={idx} value={GRADUATE_GRADE[k]}>
-                      {k}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Date of birth</FormLabel>
-                <input
-                  type="date"
-                  style={{
-                    border: "1px solid",
-                    borderColor: "rgba(0,0,0,0.1)",
-                    padding: "4px",
-                    borderRadius: "5px",
-                  }}
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Graduate grade</FormLabel>
-                <Select defaultValue="">
-                  <option value="" hidden>
-                    Choose a graduate grade
-                  </option>
-                  {Object.keys(GRADUATE_GRADE).map((k, idx) => (
-                    <option key={idx} value={GRADUATE_GRADE[k].value}>
-                      {k}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-            </VStack>
+                <HStack>
+                  <FormControl isRequired>
+                    <FormLabel>Gender</FormLabel>
+
+                    <Select
+                      value={certMintData.gender}
+                      onChange={(e) =>
+                        setCertMintData((pre) => ({
+                          ...pre,
+                          gender: e.target.value,
+                        }))
+                      }
+                    >
+                      {Object.keys(GENDER).map((k, idx) => (
+                        <option key={idx} value={GRADUATE_GRADE[k]}>
+                          {k}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Date of birth</FormLabel>
+                    <input
+                      value={certMintData.dateOfBirth}
+                      onChange={(e) =>
+                        setCertMintData((pre) => ({
+                          ...pre,
+                          dateOfBirth: e.target.value,
+                        }))
+                      }
+                      type="date"
+                      style={{
+                        border: "1px solid",
+                        borderColor: "rgba(0,0,0,0.1)",
+                        padding: "4px",
+                        borderRadius: "5px",
+                      }}
+                    />
+                  </FormControl>
+                </HStack>
+
+                <FormControl isRequired>
+                  <FormLabel>Graduate grade</FormLabel>
+                  <Select
+                    value={certMintData.graduateGrade}
+                    onChange={(e) =>
+                      setCertMintData((pre) => ({
+                        ...pre,
+                        graduateGrade: e.target.value,
+                      }))
+                    }
+                  >
+                    {Object.keys(GRADUATE_GRADE).map((k, idx) => (
+                      <option key={idx} value={GRADUATE_GRADE[k].value}>
+                        {k}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel>Mint where?</FormLabel>
+                  <Input
+                    value={certMintData.mintWhere}
+                    onChange={(e) =>
+                      setCertMintData((pre) => ({
+                        ...pre,
+                        mintWhere: e.target.value,
+                      }))
+                    }
+                    placeholder="where does mint cert?"
+                  />
+                </FormControl>
+              </VStack>
+            )}
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="teal">Save</Button>
+            <Button
+              colorScheme="teal"
+              isLoading={submitting}
+              onClick={handleMintCert}
+            >
+              Save
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

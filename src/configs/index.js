@@ -1,24 +1,16 @@
-export const JOB_CORE_ADDRESS = "0xddCFB2aa6dADFf1775149B31D6261f64aCF583b3";
+export const CERT_ADDRESS = "0xB8C62f73fEfa4de82E05c55B8665F13BBbF7176d";
 
-export const JOB_CORE_METHODS = {
-  getLatestRecruiterId: "getLatestRecruiterId",
-  recruiters: "recruiters",
-  getJob: "getJob",
-  getJobs: "getJobs()",
-  getJobsPaging: "getJobs(uint256,uint256)",
-  jobOwner: "jobOwner",
-  recruiterToId: "recruiterToId",
-  addJob: "addJob",
-  getOwnerJobs: "getOwnerJobs",
-  jobs: "jobs",
-  updateCurrentResume: "updateCurrentResume",
-  getCurrentResume: "getCurrentResume",
-  addResume: "addResume",
-  getOwnerResumes: "getOwnerResumes",
-  isAppliedJob: "isAppliedJob",
-  isResumeApplied: "isResumeApplied",
-  applyJob: "applyJob",
-  getAppliedJobs: "getAppliedJobs",
+export const CERT_METHODS = {
+  addCensor: "addCensor",
+  totalCensors: "totalCensors",
+  censors: "censors",
+  addSpecializedTraining: "addSpecializedTraining",
+  getSpecializedTrainings: "getSpecializedTrainings",
+  addCertForm: "addCertForm",
+  getCertForms: "getCertForms",
+  totalCertForm: "totalCertForm",
+  certFormMinted: "certFormMinted",
+  addCert: "addCert",
 };
 
 export const ROLES = {
@@ -50,6 +42,7 @@ export const GENDER = {
 };
 
 export const CERT_STATUSES = {
-  PENDING: 0,
-  REPORTED: 1,
+  DEFAULT: 0,
+  PENDING: 1,
+  REPORTED: 2,
 };

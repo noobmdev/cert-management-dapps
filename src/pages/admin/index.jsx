@@ -26,7 +26,7 @@ const Admin = () => {
             fontSize="xl"
             fontWeight="bold"
             textTransform="uppercase"
-            borderColor="white"
+            borderColor="#000"
             borderBottom={
               selectedItem.value == menu[k].value ? "4px solid" : ""
             }

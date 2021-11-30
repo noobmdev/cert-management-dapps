@@ -1,5 +1,5 @@
 {
-  "name": "job-dapps",
+  "name": "cert-management-dapps",
   "version": "0.1.0",
   "dependencies": {
     "@chakra-ui/react": "^1.6.6",
@@ -12,6 +12,7 @@
     "@web3-react/core": "^6.1.9",
     "@web3-react/injected-connector": "^6.0.7",
     "@web3-react/walletconnect-connector": "^6.2.8",
+    "axios": "^0.24.0",
     "ethers": "^5.4.6",
     "framer-motion": "^4",
     "ipfs-http-client": "^53.0.1",

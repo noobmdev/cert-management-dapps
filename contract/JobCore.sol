@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        return msg.data;
-    }
-}
+import 'https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 
 abstract contract Ownable is Context {
     address private _owner;
@@ -69,6 +62,7 @@ abstract contract Ownable is Context {
     }
 }
 
+
 library Counters {
     struct Counter {
         // This variable should never be directly accessed by users of the library: interactions must be restricted to
@@ -100,345 +94,180 @@ library Counters {
     }
 }
 
-contract JobCore is Ownable {
-    /** 
-    * === CONFIG
-    */
+contract CertERC721 is ERC721Enumerable, Ownable {
+    
+    using Strings for uint256;
+    
+    // Optional mapping for token URIs
+    mapping (uint256 => string) private certs;
+
+    // Base URI
+    string private _baseURIextended;
+
+
+    constructor()
+        ERC721("CertManagement", "CM")
+    {}
+    
+    function setBaseURI(string memory baseURI_) external onlyOwner() {
+        _baseURIextended = baseURI_;
+    }
+    
+    function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
+        require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
+        certs[tokenId] = _tokenURI;
+    }
+    
+    function _baseURI() internal view virtual override returns (string memory) {
+        return _baseURIextended;
+    }
+    
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+
+        string memory _tokenURI = certs[tokenId];
+        string memory base = _baseURI();
+        
+        // If there is no base URI, return the token URI.
+        if (bytes(base).length == 0) {
+            return _tokenURI;
+        }
+        // If both are set, concatenate the baseURI and tokenURI (via abi.encodePacked).
+        if (bytes(_tokenURI).length > 0) {
+            return string(abi.encodePacked(base, _tokenURI));
+        }
+        // If there is a baseURI but no tokenURI, concatenate the tokenID to the baseURI.
+        return string(abi.encodePacked(base, tokenId.toString()));
+    }
+    
+    function mint(
+        address _to,
+        string memory tokenURI_
+    ) internal onlyOwner() {
+        uint256 _tokenId = totalSupply();
+        _mint(_to, _tokenId);
+        _setTokenURI(_tokenId, tokenURI_);
+    }
+    
+    
+    function burn(uint256 _tokenId) internal onlyOwner() {
+        _burn(_tokenId);
+    }
+}
+
+
+contract CertManagement is CertERC721 {
     using Counters for Counters.Counter;
     
-    /** 
-    * === STRUCT & CONSTANT
-    */
-    enum OBEJCTS {
-        RECRUITER,
-        CANDIDATE,
-        JOB
+    enum ROLES {
+        OWNER,
+        CENSOR
+    }
+
+    enum CERT_STATUSES {
+        DEFAULT,
+        PENDING
     }
     
-    uint256 DEFAULT_EXPIRED_TIME = 15 days;
-    
-    struct Recruiter {
+    struct Censor {
+        address addr;
+        string name;
+        string email;
+    }
+
+    struct SpecializedTraining {
         uint256 id;
         string name;
-        string headquarter;
-        string companySize;
-        string website;
-        string contact;
-        string addr;
-        string logo;
     }
-    
-    struct Job {
-        uint256 id;
-        string title;
-        uint256 salaryMin;
-        uint256 salaryMax;
-        string location;
-        string experience;
-        string[] skills;
-        string descriptions;
-        string benefits;
-        string requirements;
-        uint256 expiredIn; 
-    }
-    
-    struct Resume {
-        uint256 id;
+
+    struct Cert {
+        address to;
         string url;
     }
- 
-    /** 
-    * === VARIABLES
-    */
-    Counters.Counter latestRecruiterId;
-    Counters.Counter latestJobId;
-    Counters.Counter latestResumeId; 
     
-    // owner => recruiterId
-    mapping(address => uint256) public recruiterToId;
-    // recruiterId => Recruiter
-    mapping(uint256 => Recruiter) public recruiters;
-    
-    // jobId => Job
-    mapping(uint256 => Job) public jobs;
-    // jobId => owner
-    mapping(uint256 => address) public jobOwner;
-    // owner => jobIds[]
-    mapping(address => uint256[]) public ownerJobs;
-    
-    // address => Resume[]
-    mapping(address => Resume[]) resumes;
-    // resumeId => owner
-    mapping(uint256 => address) public resumeOwner;
-    // resumeId => resumeIndex
-    mapping(uint256 => uint256) public resumeIndexs;
-    // address => Resume
-    mapping(address => Resume) public currentResume;
-    
-    // jobId => resumeIds[]
-    mapping(uint256 => uint256[]) public appliedResumes;
-    // address => jobIds[]
-    mapping(address => uint256[]) public appliedJobs;
+    mapping(address => ROLES[]) roles;
 
-    /* 
-    / === CONSTRUCTOR
-    */
+    mapping(uint256 => Censor) public censors;
+    uint256 public totalCensors;
+    
+    SpecializedTraining[] public specializedTrainings;
+    mapping(string => bool) private specializedTrainingsAdded;
+
+    Cert[] certs;
+    mapping(uint256 => uint256) totalApproveOfCert;
+    mapping(uint256 => CERT_STATUSES) certStatus;
+
+    string[] certForms;
+    mapping(uint256 => uint256) public totalCertForm;
+    mapping(uint256 => uint256) public certFormMinted;
+    
     constructor() {
-        address[8] memory recruiterAddresses = [
-            0xe9dd3CC74B6d57E8B27D4bF6cA96ffAeBEF4205e,
-            0x78033C72581fDc5593b8120760C70018eD42AA69,
-            0x4Acf773BD581BdF5De5F9E6fc06589C3F6C791F9,
-            0x78033C72581fDc5593b8120760C70018eD42AA69,
-            0x78033C72581fDc5593b8120760C70018eD42AA69,
-            0x78033C72581fDc5593b8120760C70018eD42AA69,
-            0x78033C72581fDc5593b8120760C70018eD42AA69,
-            0x78033C72581fDc5593b8120760C70018eD42AA69
-        ];
-        string[8] memory names = ["Company 1", "Company 2", "Company 3", "Company 4", "Company 5", "Company 6", "Company 7", "Company 8"];
-        string[8] memory headquarters = ["Headquarter 1", "Headquarter 2", "Headquarter 3", "Headquarter 4", "Headquarter 5", "Headquarter 6", "Headquarter 7", "Headquarter 8"];
-        string[8] memory companySizes = ["1 - 9", "10 - 49", "1 - 9", "50 - 99", "100 - 299", "50 - 99", "300 - 999", "> 1000"];
-        string[8] memory websites = ["https://web1.com", "https://web2.com", "https://web3.com", "https://web4.com", "https://web5.com", "https://web6.com", "https://web7.com", "https://web8.com"];
-        string[8] memory contacts = ["Contact 1", "Contact 2", "Contact 3", "Contact 4", "Contact 5", "Contact 6", "Contact 7", "Contact 8"];
-        string[8] memory addresses = ["Address 1", "Address 2", "Address 3", "Address 4", "Address 5", "Address 6", "Address 7", "Address 8"];
-        string[8] memory logos = [
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401209/NHATUYENDUNG1_vtcgeq.png",
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401208/NHATUYENDUNG2_j4mhca.png", 
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401209/NHATUYENDUNG3_utjokp.png", 
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401209/NHATUYENDUNG4_h1djot.png", 
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401209/NHATUYENDUNG5_w7xwkp.png", 
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401209/NHATUYENDUNG6_xvzgd8.png", 
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401209/NHATUYENDUNG7_ifgvt0.png", 
-            "https://res.cloudinary.com/munumber2/image/upload/v1634401209/NHATUYENDUNG6_xvzgd8.png"
-        ];
-        
-        
-        for(uint8 i = 0; i < names.length; i++) {
-            addRecruiter(recruiterAddresses[i], names[i], headquarters[i], companySizes[i], websites[i], contacts[i], addresses[i], logos[i]);
+        roles[msg.sender].push(ROLES.OWNER);
+    }
+    
+    function _hasRole(address _consor, ROLES _role) private view returns(bool) {
+        ROLES[] memory _roles = roles[_consor];
+        for(uint i=0; i<_roles.length; i++) {
+            if(_roles[i] == _role) return true;
         }
+        return false;
     }
     
-    /* 
-    / MODIFIERS
-    */
-    modifier onlyRecuiter {
-        require(recruiterToId[_msgSender()] != 0, "RECRUITER: INVALID_RECRUITER_ADDRESS");
-        _;
+    function addCensor(address _addr, string memory _name, string memory _email) external {
+            require(!_hasRole(_addr, ROLES.CENSOR), "CENSOR: UNIQUE_CENSOR_ADDRESSS");
+            roles[_addr].push(ROLES.CENSOR);
+            censors[totalCensors] = Censor({
+                addr: _addr,
+                name: _name,
+                email: _email
+            });
+            totalCensors++;
+    }
+
+    function getOwnerRoles(address sender) external view returns(ROLES[] memory) {
+        return roles[sender];
+    }
+     
+    function addSpecializedTraining(string memory _name) external {
+        require(!specializedTrainingsAdded[_name], "SPECIALIZED_TRAINING: already added");
+        specializedTrainings.push(SpecializedTraining({
+            id: specializedTrainings.length,
+            name: _name
+        }));
+        specializedTrainingsAdded[_name] = true;
     }
     
-    modifier isValidRecruiterId(uint256 _recruiter) {
-         uint256 _latestRecruiterId = latestRecruiterId.current();
-        require(_recruiter > 0 || _recruiter <= _latestRecruiterId, "RECRUITER: INVALID_ID");
-        _;
+    function getSpecializedTrainings() external view returns(SpecializedTraining[] memory) {
+        return specializedTrainings;
     }
-    
-    modifier isValidJobId(uint256 _jobId) {
-         uint256 _latestJobId = latestJobId.current();
-        require(_jobId > 0 || _jobId <= _latestJobId, "JOB: INVALID_ID");
-        _;
+
+    function addCertForm(string memory _url, uint256 _total) external {
+        uint256 length = certForms.length;
+        totalCertForm[length] = _total;
+        certForms.push(_url);
     }
-    
-    modifier isValidResumeId(uint256 _resume) {
-         uint256 _latestResumeId = latestResumeId.current();
-        require(_resume > 0 || _resume <= _latestResumeId, "RESUME: INVALID_ID");
-        _;
+
+    function getCertForms () external view returns(string[] memory) {
+        return certForms;
     }
-    
-    /* 
-    / === FUNCTIONS
-    */
-    function addRecruiter(
-        address _recruiter,
-        string memory _name, 
-        string memory _headquarter, 
-        string memory _companySize, 
-        string memory _website, 
-        string memory _contact, 
-        string memory _addr, 
-        string memory _logo
-    ) public onlyOwner returns(uint256) {
-        latestRecruiterId.increment();
-        uint256 _latestRecruiterId = latestRecruiterId.current();
-        
-        recruiterToId[_recruiter] = _latestRecruiterId;
-    
-        recruiters[_latestRecruiterId] = Recruiter({
-            id: _latestRecruiterId,
-            name: _name,
-            headquarter: _headquarter,
-            companySize: _companySize,
-            website: _website,
-            contact: _contact,
-            addr: _addr,
-            logo: _logo
-        });
-        
-        return _latestRecruiterId;
-    }
-    
-    function getLatestRecruiterId() view public returns(uint256) {
-        uint256 _latestRecruiterId = latestRecruiterId.current();
-        return _latestRecruiterId;
-    }
-    
-    function addJob(
-        string memory _title, 
-        uint256 _salaryMin, 
-        uint256 _salaryMax, 
-        string memory _location,
-        string memory _experience,
-        string[] memory _skills,
-        string memory _descriptions,  
-        string memory _benefits, 
-        string memory _requirements
-    ) public onlyRecuiter returns(uint256) {
-        require(_salaryMin < _salaryMax, "JOB: INVALID_RANGE_SALARY");
-        latestJobId.increment();
-        uint256 _latestJobId = latestJobId.current();
-        
-        jobs[_latestJobId] = Job({
-           id: _latestJobId,
-           title: _title,
-           salaryMin: _salaryMin,
-           salaryMax: _salaryMax,
-           location: _location,
-           experience: _experience,
-           skills: _skills,
-           descriptions: _descriptions,
-           benefits: _benefits,
-           requirements: _requirements,
-           expiredIn: block.timestamp + DEFAULT_EXPIRED_TIME
-        });
-        address sender = _msgSender();
-        jobOwner[_latestJobId] = sender;
-        ownerJobs[sender].push(_latestJobId);
-        
-        return _latestJobId;
-    }
-    
-    function getLatestJobId() view public returns(uint256) {
-        uint256 _latestJobId = latestJobId.current();
-        return _latestJobId;
-    }
-    
-    function getOwnerJobs() view public returns(Job[] memory) {
-        uint256[] memory jobIds = ownerJobs[msg.sender];
-        Job[] memory _jobs = new Job[](jobIds.length);
-        uint256 count = 0;
-        uint256 totalOwnerJob = jobIds.length;
-        for(uint256 i = 0; i < totalOwnerJob; i++) {
-            _jobs[count] =  jobs[jobIds[i]];
-            count++;
-        }
-        return _jobs;
-    }
-    
-    function getJob(uint _jobId) view public isValidJobId(_jobId) returns(Job memory) {
-        return jobs[_jobId];
-    }
-    
-     function getJobs() view public returns(Job[] memory) {
-        uint256 _latestJobId = latestJobId.current();
-        Job[] memory _jobs = new Job[](_latestJobId);
-        uint256 count = 0;
-        for(uint256 i = _latestJobId; i > 0; i--) {
-            _jobs[count] =  jobs[i];
-            count++;
-        }
-        return _jobs;
-    }
-    
-    function getJobs(uint256 first, uint256 skip) view public returns(Job[] memory) {
-        uint256 _latestJobId = latestJobId.current();
-        if(skip >= _latestJobId) {
-            return new Job[](0);
-        }
-        uint256 rest = _latestJobId - skip;
-        uint256 _first = first;
-        if(rest < first) {
-            _first = rest;
-        }
-        Job[] memory _jobs = new Job[](_first);
-        uint256 count = 0;
-        for(uint256 i = 1; i <= _first; i++) {
-            _jobs[count] = jobs[skip + i];
-            count++;
-        }
-        return _jobs;
-    }
-    
-    function addResume(string memory _url) public returns(uint256) {
-        latestResumeId.increment();
-        uint256 _latestResumeId = latestResumeId.current();
-        address sender = _msgSender();
-        resumeIndexs[_latestResumeId] = resumes[sender].length;
-        
-        resumes[sender].push(Resume({
-            id: _latestResumeId,
+
+    function addCert(address _to, string memory _url) external {
+        certStatus[certs.length] = CERT_STATUSES.PENDING;
+        certs.push(Cert({
+            to: _to,
             url: _url
         }));
-        
-        resumeOwner[_latestResumeId] = sender;
-        
-        return _latestResumeId;
-    } 
-    
-    function updateCurrentResume(string memory _url) public {
-        currentResume[_msgSender()] = Resume({
-            id: 0,
-            url: _url
-        });
     }
-    
-     function getCurrentResume() view public returns(Resume memory) {
-        return currentResume[_msgSender()];
-    }
-    
-    function isAppliedJob(uint256 _jobId) view public returns(bool) {
-        uint256[] memory _appliedJobs = appliedJobs[_msgSender()];
-        for(uint256 i = 0; i < _appliedJobs.length; i++) {
-            if(_jobId == _appliedJobs[i]) {
-                return true;
-            }
+
+    function approveCert(uint256 certIndex) external {
+        require(certIndex < certs.length, "CERT: INVALID_RANGE");
+        require(!_hasRole(msg.sender, ROLES.CENSOR), "CENSOR: UNAUTHOZIRED");
+        require(certStatus[certIndex] == CERT_STATUSES.PENDING, "CENSOR: ONLY_APPROVE_FOR_PENDING_CERT");
+        totalApproveOfCert[certIndex]++;
+        if(totalApproveOfCert[certIndex] > totalCensors/2) {
+            certStatus[certIndex];
+            Cert memory _cert = certs[certIndex];
+            mint(_cert.to, _cert.url);
         }
-        return false;
     }
-    
-    function isResumeApplied(uint256 _jobId, uint256 _resumeId) view public returns(bool) {
-        uint256[] memory _appliedResumes = appliedResumes[_jobId];
-        for(uint256 i = 0; i < _appliedResumes.length; i++) {
-            if(_resumeId == _appliedResumes[i]) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    
-    function applyJob(uint256 _jobId, uint256 _resumeId) public isValidJobId(_jobId) isValidResumeId(_resumeId) {
-        require(resumeOwner[_resumeId] == _msgSender(), "RESUME: NOT_OWNER");
-        require(!isAppliedJob(_jobId), "JOB: APPLIED_JOB");
-        require(!isResumeApplied(_jobId, _resumeId), "JOB: APPLIED_JOB");
-        
-        appliedResumes[_jobId].push(_resumeId);
-        appliedJobs[_msgSender()].push(_jobId);
-    }
-    
-    function getAppliedJobs() view public returns(uint256[] memory) {
-         return appliedJobs[_msgSender()];
-    }
-    
-    function getOwnerResumes() view public returns(Resume[] memory) {
-        return resumes[_msgSender()];
-    }
-    
-    function getAppliedResumeIds(uint256 _jobId) view public returns(uint256[] memory) {
-         return appliedResumes[_jobId];
-    }
-    
-    function getResumeById(uint256 _resumeId) view public isValidResumeId(_resumeId) returns(Resume memory) {
-        address owner = resumeOwner[_resumeId];
-        uint256 idx = resumeIndexs[_resumeId];
-        return resumes[owner][idx];
-    }
-    
 }

@@ -13,33 +13,45 @@ import {
   ModalOverlay,
 } from "@chakra-ui/modal";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
-import React from "react";
-
-const censors = [
-  {
-    name: "Censor 1",
-    email: "censor@email.com",
-    address: "0xe9dd3CC74B6d57E8B27D4bF6cA96ffAeBEF4205e",
-  },
-  {
-    name: "Censor 1",
-    email: "censor@email.com",
-    address: "0xe9dd3CC74B6d57E8B27D4bF6cA96ffAeBEF4205e",
-  },
-  {
-    name: "Censor 1",
-    email: "censor@email.com",
-    address: "0xe9dd3CC74B6d57E8B27D4bF6cA96ffAeBEF4205e",
-  },
-  {
-    name: "Censor 1",
-    email: "censor@email.com",
-    address: "0xe9dd3CC74B6d57E8B27D4bF6cA96ffAeBEF4205e",
-  },
-];
+import React, { useEffect, useState } from "react";
+import { isAddress } from "@ethersproject/address";
+import { addCensor, getCensors } from "utils/getCertContract";
+import { useActiveWeb3React } from "hooks/useActiveWeb3React";
 
 const Censor = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { account, library } = useActiveWeb3React();
+
+  const [refresh, setRefresh] = useState(true);
+  const [censors, setCensor] = useState([]);
+  const [addr, setAddr] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (library) getCensors(library).then(setCensor).catch(console.error);
+  }, [library, refresh]);
+
+  const handleAddCensor = async () => {
+    try {
+      if (!account || !library) return;
+      if (!addr || !name || !email) return alert("Fill all required fields");
+
+      if (!isAddress(addr)) return alert("Enter valid address");
+      setSubmitting(true);
+      await addCensor(library, account, [addr, name, email]);
+      setRefresh((pre) => !pre);
+      setAddr("");
+      setName("");
+      setEmail("");
+      setSubmitting(false);
+      onClose();
+    } catch (error) {
+      setSubmitting(false);
+      console.error(error);
+    }
+  };
 
   return (
     <Box>
@@ -52,20 +64,41 @@ const Censor = () => {
             <VStack spacing="4">
               <FormControl isRequired>
                 <FormLabel>Name</FormLabel>
-                <Input name="name" placeholder="Name" />
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  name="name"
+                  placeholder="Name"
+                />
               </FormControl>
               <FormControl isRequired>
                 <FormLabel>Email</FormLabel>
-                <Input name="email" placeholder="Email" />
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  name="email"
+                  placeholder="Email"
+                />
               </FormControl>
               <FormControl isRequired>
                 <FormLabel>Address</FormLabel>
-                <Input name="address" placeholder="Address" />
+                <Input
+                  value={addr}
+                  onChange={(e) => setAddr(e.target.value)}
+                  name="address"
+                  placeholder="Address"
+                />
               </FormControl>
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="teal">Save</Button>
+            <Button
+              colorScheme="teal"
+              onClick={handleAddCensor}
+              isLoading={submitting}
+            >
+              Save
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -76,22 +109,20 @@ const Censor = () => {
       <Table variant="simple" size="lg">
         <Thead>
           <Tr>
-            <Th color="white">STT</Th>
-            <Th color="white">Name</Th>
-            <Th color="white">Email</Th>
-            <Th color="white">Address</Th>
-            <Th color="white" isNumeric>
-              Actions
-            </Th>
+            <Th>STT</Th>
+            <Th>Name</Th>
+            <Th>Email</Th>
+            <Th>Address</Th>
+            <Th isNumeric>Actions</Th>
           </Tr>
         </Thead>
         <Tbody>
           {censors.map((censor, idx) => (
-            <Tr>
+            <Tr key={idx}>
               <Td>{idx + 1}</Td>
               <Td>{censor.name}</Td>
               <Td>{censor.email}</Td>
-              <Td>{censor.address}</Td>
+              <Td>{censor.addr}</Td>
               <Td isNumeric>
                 <Button colorScheme="teal" mr="2" onClick={onOpen}>
                   Edit
