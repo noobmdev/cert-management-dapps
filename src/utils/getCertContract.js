@@ -4,6 +4,12 @@ import { CERT_METHODS } from "configs";
 import { callContract, getCertContract } from "hooks/useContract";
 import { removeNumericKey } from "utils";
 
+export const getOwnerRoles = async (library, account) => {
+  if (!library || !account) return [];
+  const certContract = getCertContract(library, account);
+  return callContract(certContract, CERT_METHODS.getOwnerRoles, [account]);
+};
+
 export const addCensor = async (library, account, args = []) => {
   if (!library || !account) return;
   const certContract = getCertContract(library, account);
@@ -73,4 +79,57 @@ export const addCert = async (library, account, args = []) => {
   if (!library || !account) return;
   const certContract = getCertContract(library, account);
   return callContract(certContract, CERT_METHODS.addCert, args);
+};
+
+export const getCertsPending = async (library) => {
+  if (!library) return;
+  const certContract = getCertContract(library);
+  const certsPending = await callContract(
+    certContract,
+    CERT_METHODS.getCertsPending
+  );
+
+  return Promise.all(
+    certsPending.map(async (cert) => {
+      let data = {};
+      if (cert.url) {
+        const res = await axios.get(cert.url);
+        data = res.data;
+      }
+      return { ...removeNumericKey(cert), ...data };
+    })
+  );
+};
+
+export const approveCert = async (library, account, args = []) => {
+  if (!library || !account) return;
+  const certContract = getCertContract(library, account);
+  return callContract(certContract, CERT_METHODS.approveCert, args);
+};
+
+export const getOwnerCerts = async (library, account) => {
+  if (!library || !account) return;
+  const certContract = getCertContract(library, account);
+  const balanceOf = await callContract(certContract, CERT_METHODS.balanceOf, [
+    account,
+  ]);
+
+  const certIds = await Promise.all(
+    new Array(+balanceOf.toString())
+      .fill("")
+      .map((_, idx) =>
+        callContract(certContract, CERT_METHODS.tokenOfOwnerByIndex, [
+          account,
+          idx,
+        ])
+      )
+  );
+
+  return Promise.all(
+    certIds.map(async (id) => {
+      const url = await callContract(certContract, CERT_METHODS.tokenURI, [id]);
+      const res = await axios.get(url);
+      return { ...res.data, owner: account };
+    })
+  );
 };

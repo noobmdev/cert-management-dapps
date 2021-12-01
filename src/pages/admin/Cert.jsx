@@ -22,7 +22,7 @@ import {
 import { Select } from "@chakra-ui/select";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
 import { isAddress } from "@ethersproject/address";
-import { GENDER, GRADUATE_GRADE } from "configs";
+import { GENDER, GRADUATE_GRADE, STUDY_MODES } from "configs";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
 import React, { useEffect, useState } from "react";
 import { uploadIPFS } from "services/upload-ipfs";
@@ -37,13 +37,6 @@ import {
 const certMenu = {
   certificateType: "SPECIALIZED TRAINING",
   certificates: "CERTIFICATES",
-};
-
-const modeStudies = {
-  fullTime: "Full-time",
-  partTime: "Part-time",
-  remoteFullTime: "Remote Full-time",
-  remotePartTime: "Remote Part-time",
 };
 
 const Cert = () => {
@@ -64,7 +57,7 @@ const Cert = () => {
   const [specializedTrainingName, setSpecializedTrainingName] = useState("");
   const [certData, setCertData] = useState({
     specializedTraining: "",
-    modeStudy: modeStudies.fullTime,
+    modeStudy: STUDY_MODES.fullTime,
     total: 1,
     year: new Date().getFullYear(),
   });
@@ -121,7 +114,7 @@ const Cert = () => {
       setRefreshCert((pre) => !pre);
       setCertData({
         specializedTraining: "",
-        modeStudy: modeStudies.fullTime,
+        modeStudy: STUDY_MODES.fullTime,
         total: 1,
         year: new Date().getFullYear(),
       });
@@ -147,14 +140,23 @@ const Cert = () => {
     try {
       if (!account || !library) return;
       if (!selectedCertForm) return alert("Choose specialized training");
-      if (!certMintData.name || !certMintData.addr || !certMintData.mintWhere)
+      if (
+        !certMintData.name ||
+        !certMintData.addr ||
+        !certMintData.mintWhere ||
+        !certMintData.dateOfBirth
+      )
         return alert("Fill all required fields");
 
       const { addr, ..._certMintData } = certMintData;
       if (!isAddress(addr)) return alert("Enter valid address");
 
       setSubmitting(true);
-      const url = await uploadIPFS(_certMintData);
+      const url = await uploadIPFS({
+        ..._certMintData,
+        cert: selectedCertForm,
+        date: Math.floor(Date.now() / 1000),
+      });
       await addCert(library, account, [addr, url]);
       setRefreshCert((pre) => !pre);
       setCertMintData({
@@ -166,7 +168,7 @@ const Cert = () => {
         mintWhere: "",
       });
       setSubmitting(false);
-      onClose();
+      onCloseMint();
     } catch (error) {
       setSubmitting(false);
       console.error(error);
@@ -306,7 +308,7 @@ const Cert = () => {
                   setCertData((pre) => ({ ...pre, modeStudy: e.target.value }))
                 }
               >
-                {Object.values(modeStudies).map((v, idx) => (
+                {Object.values(STUDY_MODES).map((v, idx) => (
                   <option key={idx} value={v}>
                     {v}
                   </option>
@@ -424,7 +426,7 @@ const Cert = () => {
                       }
                     >
                       {Object.keys(GENDER).map((k, idx) => (
-                        <option key={idx} value={GRADUATE_GRADE[k]}>
+                        <option key={idx} value={GENDER[k]}>
                           {k}
                         </option>
                       ))}
@@ -463,7 +465,7 @@ const Cert = () => {
                     }
                   >
                     {Object.keys(GRADUATE_GRADE).map((k, idx) => (
-                      <option key={idx} value={GRADUATE_GRADE[k].value}>
+                      <option key={idx} value={GRADUATE_GRADE[k]}>
                         {k}
                       </option>
                     ))}

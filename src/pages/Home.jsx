@@ -1,11 +1,13 @@
 import { VStack } from "@chakra-ui/layout";
 import { Select } from "@chakra-ui/react";
 import { ROLES } from "configs";
-import React from "react";
+import { GlobalContext } from "context/GlobalContext";
+import React, { useContext } from "react";
 import { useHistory } from "react-router";
 
 const Home = () => {
   const history = useHistory();
+  const { isAuthenticated, user } = useContext(GlobalContext);
 
   return (
     <VStack pos="fixed" top="50%" left="50%" transform="translate(-50%,-50%)">
@@ -22,7 +24,13 @@ const Home = () => {
             (k) => ROLES[k].value === +e.target.value
           );
           if (!roleKey) return alert("Invalid Role");
-          history.push(`/${ROLES[roleKey].name}`);
+          let path = `/${ROLES[roleKey].name}`;
+          if (isAuthenticated && ROLES[roleKey].value === ROLES.USER.value) {
+            path = `${path}/${user.account}`;
+          } else {
+            return alert("Connect to wallet");
+          }
+          history.push(path);
         }}
         defaultValue=""
       >
@@ -37,15 +45,22 @@ const Home = () => {
         >
           choose your role
         </option>
-        {Object.keys(ROLES).map((k, idx) => (
-          <option
-            style={{ color: "black", textTransform: "uppercase" }}
-            value={ROLES[k].value}
-            key={idx}
-          >
-            {ROLES[k].name}
-          </option>
-        ))}
+        {Array.isArray(user?.roles) &&
+          Object.keys(ROLES)
+            .filter(
+              (r) =>
+                ROLES[r].value === ROLES.USER.value ||
+                user.roles.includes(ROLES[r].value)
+            )
+            .map((k, idx) => (
+              <option
+                style={{ color: "black", textTransform: "uppercase" }}
+                value={ROLES[k].value}
+                key={idx}
+              >
+                {ROLES[k].name}
+              </option>
+            ))}
       </Select>
     </VStack>
   );

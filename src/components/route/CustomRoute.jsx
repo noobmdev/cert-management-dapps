@@ -1,7 +1,7 @@
-import { useActiveWeb3React } from "hooks/useActiveWeb3React";
-import React from "react";
+import { GlobalContext } from "context/GlobalContext";
+import React, { useContext } from "react";
 import { Redirect, Route } from "react-router-dom";
-import { RouteTypes } from "routes";
+import { ROUTE_TYPES } from "routes";
 
 export const CustomRoute = ({
   component: Component,
@@ -9,14 +9,14 @@ export const CustomRoute = ({
   location,
   ...rest
 }) => {
-  const { isConnected } = useActiveWeb3React();
+  const { isAuthenticated } = useContext(GlobalContext);
 
   return (
     <Route
       {...rest}
       render={(props) =>
-        type === RouteTypes.ONLY_PRIVATE ? (
-          isConnected ? (
+        type === ROUTE_TYPES.PRIVATE ? (
+          isAuthenticated ? (
             <Component {...props} />
           ) : (
             <Redirect
@@ -26,8 +26,8 @@ export const CustomRoute = ({
               }}
             />
           )
-        ) : type === RouteTypes.ONLY_PUBLIC ? (
-          !isConnected ? (
+        ) : type === ROUTE_TYPES.PUBLIC ? (
+          !isAuthenticated ? (
             <Component {...props} />
           ) : (
             <Redirect

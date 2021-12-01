@@ -12,17 +12,36 @@ import {
 import { connectors } from "connectors";
 import { useWallet } from "connectors/hooks";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "styles/Layout.css";
 import Logo from "assets/images/logo.png";
 import { Image } from "@chakra-ui/image";
+import { GlobalContext } from "context/GlobalContext";
+import { getOwnerRoles } from "utils/getCertContract";
 
 export const Layout = ({ children }) => {
-  const { account, isConnected } = useActiveWeb3React();
+  const { account, isConnected, chainId, library } = useActiveWeb3React();
   const { connect } = useWallet();
-
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { setCurrentUser } = useContext(GlobalContext);
+
+  useEffect(() => {
+    if (account && chainId && library) {
+      getOwnerRoles(library, account)
+        .then((roles) => {
+          setCurrentUser({
+            account,
+            chainId,
+            roles,
+          });
+        })
+        .catch((err) => {
+          setCurrentUser({});
+          console.error(err);
+        });
+    }
+  }, [library, account, chainId]);
 
   return (
     <Box minH="100vh">
@@ -95,7 +114,7 @@ export const Layout = ({ children }) => {
         {children}
       </Box>
 
-      <Box textAlign="center" p="4" style={{ color: "white" }}>
+      <Box textAlign="center" p="4">
         © {new Date().getFullYear()} Copyright
       </Box>
     </Box>

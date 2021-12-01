@@ -6,8 +6,63 @@ import SignatureImg from "assets/images/signature.png";
 import CertBgImg1 from "assets/images/cert-bg-1.png";
 import CertBgImg2 from "assets/images/cert-bg-2.png";
 import { Image } from "@chakra-ui/image";
+import { GENDER, GRADUATE_GRADE, STUDY_MODES } from "configs";
+import { formatDate } from "utils";
 
-const Certificate = () => {
+const translates = {
+  gender: {
+    [GENDER.MALE]: {
+      en: "Male",
+      vi: "Nam",
+    },
+    [GENDER.FEMALE]: {
+      en: "Female",
+      vi: "Nữ",
+    },
+  },
+  graduateGrade: {
+    [GRADUATE_GRADE.A]: {
+      en: "A",
+      vi: "Xuất sắc",
+    },
+    [GRADUATE_GRADE.B]: {
+      en: "B",
+      vi: "Giỏi",
+    },
+    [GRADUATE_GRADE.C]: {
+      en: "C",
+      vi: "Khá",
+    },
+    [GRADUATE_GRADE.D]: {
+      en: "D",
+      vi: "Trung bình",
+    },
+    [GRADUATE_GRADE.F]: {
+      en: "F",
+      vi: "Yếu",
+    },
+  },
+  modeStudy: {
+    [STUDY_MODES.fullTime]: {
+      en: STUDY_MODES.fullTime,
+      vi: "Chính quy",
+    },
+    [STUDY_MODES.partTime]: {
+      en: STUDY_MODES.partTime,
+      vi: "Không chính quy",
+    },
+    [STUDY_MODES.remoteFullTime]: {
+      en: STUDY_MODES.remoteFullTime,
+      vi: "Chính quy từ xa",
+    },
+    [STUDY_MODES.remotePartTime]: {
+      en: STUDY_MODES.remotePartTime,
+      vi: "Không chính quy từ xa",
+    },
+  },
+};
+
+const Certificate = ({ cert }) => {
   return (
     <HStack justify="center" my="16">
       <HStack flex="1" spacing="2" maxW="90em">
@@ -33,8 +88,8 @@ const Certificate = () => {
           <Box textAlign="center" fontWeight="extrabold">
             <Box fontSize="2xl">ADVANCED DIPLOMA</Box>
 
-            <Box fontSize="xl">
-              Business English Translation and Interpretation
+            <Box fontSize="xl" textTransform="uppercase">
+              {cert.cert?.specializedTraining}
             </Box>
           </Box>
 
@@ -47,32 +102,41 @@ const Certificate = () => {
             pr="24"
           >
             <Box>Upon(Mr, Ms):</Box>
-            <Box borderBottom="1px dotted">Nguyen Van A</Box>
+            <Box borderBottom="1px dotted">{cert.name}</Box>
 
             <Box>Gender:</Box>
-            <Box borderBottom="1px dotted">Female</Box>
+            <Box borderBottom="1px dotted">
+              {translates.gender[cert.gender]?.en}
+            </Box>
 
             <Box>Date of birth:</Box>
-            <Box borderBottom="1px dotted">2021-01-01</Box>
+            <Box borderBottom="1px dotted">{cert.dateOfBirth}</Box>
 
             <Box>Graduate grade:</Box>
-            <Box borderBottom="1px dotted">A</Box>
+            <Box borderBottom="1px dotted">
+              {translates.graduateGrade[cert.graduateGrade]?.en}
+            </Box>
 
             <Box>Mode of Study:</Box>
-            <Box borderBottom="1px dotted">Full-time</Box>
+            <Box borderBottom="1px dotted">
+              {cert.cert?.modeStudy &&
+                translates.modeStudy[cert.cert.modeStudy]?.en}
+            </Box>
           </Grid>
 
           <HStack justify="space-between" align="flex-start">
             <Box>
-              <Box>Reg. No: 15</Box>
+              {/* <Box>Reg. No: 15</Box> */}
               <QRCode
-                value="http://localhost:3000/users/0xe9dd3CC74B6d57E8B27D4bF6cA96ffAeBEF4205e"
+                value={`${process.env.REACT_APP_FRONTEND_URL}/users/${cert.owner}`}
                 size={120}
               />
             </Box>
 
             <Box textAlign="right">
-              <Box>Ho Chi Minh, 2021-01-01</Box>
+              <Box>
+                {cert.mintWhere}, {formatDate(cert.date)}
+              </Box>
               <Box fontWeight="semibold">THE REFACTOR</Box>
               <Box pos="relative">
                 <Image boxSize={32} opacity="0.5" src={CertMarkImg} />
@@ -123,7 +187,9 @@ const Certificate = () => {
           <Box textAlign="center" fontWeight="extrabold">
             <Box fontSize="2xl">BẰNG TỐT NGHIỆP</Box>
 
-            <Box fontSize="xl">Phiên dịch tiếng anh thương mại</Box>
+            <Box fontSize="xl" textTransform="uppercase">
+              {cert.cert?.specializedTraining}
+            </Box>
           </Box>
 
           <Grid
@@ -135,32 +201,41 @@ const Certificate = () => {
             pr="24"
           >
             <Box>Cho:</Box>
-            <Box borderBottom="1px dotted">Nguyen Van A</Box>
+            <Box borderBottom="1px dotted">{cert.name}</Box>
 
             <Box>Giới tính:</Box>
-            <Box borderBottom="1px dotted">Nữ</Box>
+            <Box borderBottom="1px dotted">
+              {translates.gender[cert.gender]?.vi}
+            </Box>
 
             <Box>Ngày, tháng, năm sinh:</Box>
-            <Box borderBottom="1px dotted">2021-01-01</Box>
+            <Box borderBottom="1px dotted">{cert.dateOfBirth}</Box>
 
             <Box>Xếp loại tốt nghiệp:</Box>
-            <Box borderBottom="1px dotted">A</Box>
+            <Box borderBottom="1px dotted">
+              {translates.graduateGrade[cert.graduateGrade]?.vi}
+            </Box>
 
             <Box>Hình thức đào tạo:</Box>
-            <Box borderBottom="1px dotted">Chính quy</Box>
+            <Box borderBottom="1px dotted">
+              {cert.cert?.modeStudy &&
+                translates.modeStudy[cert.cert.modeStudy]?.vi}
+            </Box>
           </Grid>
 
           <HStack justify="space-between" align="flex-start">
             <Box>
-              <Box>Số hiệu đăng ký: 15</Box>
+              {/* <Box>Số hiệu đăng ký: 15</Box> */}
               <QRCode
-                value="http://localhost:3000/users/0xe9dd3CC74B6d57E8B27D4bF6cA96ffAeBEF4205e"
+                value={`${process.env.REACT_APP_FRONTEND_URL}/users/${cert.owner}`}
                 size={120}
               />
             </Box>
 
             <Box textAlign="right">
-              <Box>Ho Chi Minh, 2021-01-01</Box>
+              <Box>
+                {cert.mintWhere}, {formatDate(cert.date)}
+              </Box>
               <Box fontWeight="semibold">HIỆU TRƯỞNG</Box>
               <Box pos="relative">
                 <Image boxSize={32} opacity="0.5" src={CertMarkImg} />

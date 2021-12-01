@@ -1,6 +1,7 @@
-export const CERT_ADDRESS = "0xB8C62f73fEfa4de82E05c55B8665F13BBbF7176d";
+export const CERT_ADDRESS = "0x71EdD119F771b3Ed10B64cfd1bfF34d64995289f";
 
 export const CERT_METHODS = {
+  getOwnerRoles: "getOwnerRoles",
   addCensor: "addCensor",
   totalCensors: "totalCensors",
   censors: "censors",
@@ -11,6 +12,11 @@ export const CERT_METHODS = {
   totalCertForm: "totalCertForm",
   certFormMinted: "certFormMinted",
   addCert: "addCert",
+  getCertsPending: "getCertsPending",
+  approveCert: "approveCert",
+  balanceOf: "balanceOf",
+  tokenOfOwnerByIndex: "tokenOfOwnerByIndex",
+  tokenURI: "tokenURI",
 };
 
 export const ROLES = {
@@ -29,11 +35,18 @@ export const ROLES = {
 };
 
 export const GRADUATE_GRADE = {
-  F: 0,
-  D: 1,
-  C: 2,
-  B: 3,
-  A: 4,
+  F: "F",
+  D: "D",
+  C: "C",
+  B: "B",
+  A: "A",
+};
+
+export const STUDY_MODES = {
+  fullTime: "Full-time",
+  partTime: "Part-time",
+  remoteFullTime: "Remote Full-time",
+  remotePartTime: "Remote Part-time",
 };
 
 export const GENDER = {

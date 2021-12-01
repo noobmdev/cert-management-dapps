@@ -7,6 +7,5 @@ export const uploadIPFS = async (payload) => {
   // call Core API methods
   const { path } = await client.add(JSON.stringify(payload));
   const fullPath = `https://ipfs.infura.io/ipfs/${path}`;
-  console.log(fullPath);
   return fullPath;
 };

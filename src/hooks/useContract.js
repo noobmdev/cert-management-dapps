@@ -62,17 +62,10 @@ export async function callContract(
   args = [],
   overrides = {}
 ) {
-  // const callstatic = await contract.callStatic[method](
-  //   ...args,
-  //   {
-  //     ...overrides
-  //   }
-  // )
   try {
     const tx = await contract[method](...args, {
       ...overrides,
     });
-    // console.log(tx);
     if (typeof tx.wait !== "function") return tx;
 
     if (!tx) throw new Error("cannot create transaction");
