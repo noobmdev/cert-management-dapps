@@ -25,8 +25,10 @@ const Home = () => {
           );
           if (!roleKey) return alert("Invalid Role");
           let path = `/${ROLES[roleKey].name}`;
-          if (isAuthenticated && ROLES[roleKey].value === ROLES.USER.value) {
-            path = `${path}/${user.account}`;
+          if (isAuthenticated) {
+            if (ROLES[roleKey].value === ROLES.USER.value) {
+              path = `${path}/${user.account}`;
+            }
           } else {
             return alert("Connect to wallet");
           }
