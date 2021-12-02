@@ -2,6 +2,7 @@ import { InjectedConnector } from "@web3-react/injected-connector";
 import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
 import { ReactComponent as MetamaskIcon } from "assets/images/metamask.svg";
 import { ReactComponent as WalletConnectIcon } from "assets/images/walletconnect.svg";
+import { StaticJsonRpcProvider } from "@ethersproject/providers";
 
 export const injected = new InjectedConnector({ supportedChainIds: [97] });
 
@@ -23,3 +24,7 @@ export const connectors = [
     icon: <WalletConnectIcon />,
   },
 ];
+
+export const simpleRpcProvider = new StaticJsonRpcProvider(
+  "https://data-seed-prebsc-1-s1.binance.org:8545/"
+);

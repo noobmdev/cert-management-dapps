@@ -36,7 +36,7 @@ export const timeLeft = (date) => {
 
 export const formatDate = (date) => {
   if (!date) return;
-  let d = new Date(date),
+  let d = new Date(date * 1000),
     month = "" + (d.getMonth() + 1),
     day = "" + d.getDate(),
     year = d.getFullYear();

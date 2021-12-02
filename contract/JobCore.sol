@@ -143,14 +143,14 @@ contract CertERC721 is ERC721Enumerable, Ownable {
     function mint(
         address _to,
         string memory tokenURI_
-    ) internal onlyOwner() {
+    ) internal {
         uint256 _tokenId = totalSupply();
         _mint(_to, _tokenId);
         _setTokenURI(_tokenId, tokenURI_);
     }
     
     
-    function burn(uint256 _tokenId) internal onlyOwner() {
+    function burn(uint256 _tokenId) internal {
         _burn(_tokenId);
     }
 }
@@ -168,6 +168,12 @@ contract CertManagement is CertERC721 {
         DEFAULT,
         PENDING,
         REPORTED
+    }
+
+    enum CERT_PENDING_STATUSES {
+        DEFAULT,
+        APPROVED,
+        REJECTED
     }
     
     struct Censor {
@@ -195,6 +201,7 @@ contract CertManagement is CertERC721 {
     mapping(string => bool) private specializedTrainingsAdded;
 
     Cert[] certsPending;
+    mapping(uint256 => mapping(address => CERT_PENDING_STATUSES)) certsPendingStatus;
     mapping(uint256 => uint256) totalApproveOfCert;
     mapping(uint256 => CERT_STATUSES) certStatus;
 
@@ -273,14 +280,18 @@ contract CertManagement is CertERC721 {
         require(certIndex < certsPending.length, "CERT: INVALID_RANGE");
         require(_hasRole(msg.sender, ROLES.CENSOR), "CENSOR: UNAUTHOZIRED");
         require(certStatus[certIndex] == CERT_STATUSES.PENDING, "CENSOR: ONLY_APPROVE_FOR_PENDING_CERT");
+        require(certsPendingStatus[certIndex][msg.sender] == CERT_PENDING_STATUSES.DEFAULT, "CERT: REVIEWED");
         totalApproveOfCert[certIndex]++;
+        certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.APPROVED;
         if(totalApproveOfCert[certIndex] > totalCensors/2) {
+            delete certsPendingStatus[certIndex][msg.sender];
             delete certStatus[certIndex];
+            delete totalApproveOfCert[certIndex];
             Cert memory _cert = certsPending[certIndex];
-            mint(_cert.to, _cert.url);
-            emit Mint(_cert.to, _cert.url);
             certsPending[certIndex] = certsPending[certsPending.length - 1];
             certsPending.pop();
+            mint(_cert.to, _cert.url);
+            emit Mint(_cert.to, _cert.url);
         }
     }
 }

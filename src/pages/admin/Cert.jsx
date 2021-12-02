@@ -343,7 +343,7 @@ const Cert = () => {
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
-            {certMenu.certificates
+            {certMenu.certificates === selectedItem
               ? "Add a new certificate"
               : "Add a new specialized training"}
           </ModalHeader>
