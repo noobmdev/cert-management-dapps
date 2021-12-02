@@ -1,3 +1,4 @@
+import { Button } from "@chakra-ui/button";
 import { Box } from "@chakra-ui/layout";
 import { Spinner } from "@chakra-ui/spinner";
 import Certificate from "components/Certificate";

@@ -1,4 +1,4 @@
-export const CERT_ADDRESS = "0x71EdD119F771b3Ed10B64cfd1bfF34d64995289f";
+export const CERT_ADDRESS = "0xDEc6a15B10c62b042bAF30382A476Ad498d38D2C";
 
 export const CERT_METHODS = {
   getOwnerRoles: "getOwnerRoles",

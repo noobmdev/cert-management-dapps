@@ -223,7 +223,7 @@ const Cert = () => {
                   <Td>{cert.total?.toString()}</Td>
                   <Td>{cert.minted?.toString()}</Td>
                   <Td isNumeric>
-                    <Button colorScheme="telegram">View</Button>
+                    {/* <Button colorScheme="telegram">View</Button> */}
                     <Button
                       colorScheme="teal"
                       mx="2"

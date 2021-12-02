@@ -166,7 +166,8 @@ contract CertManagement is CertERC721 {
 
     enum CERT_STATUSES {
         DEFAULT,
-        PENDING
+        PENDING,
+        REPORTED
     }
     
     struct Censor {
@@ -193,13 +194,15 @@ contract CertManagement is CertERC721 {
     SpecializedTraining[] public specializedTrainings;
     mapping(string => bool) private specializedTrainingsAdded;
 
-    Cert[] certs;
+    Cert[] certsPending;
     mapping(uint256 => uint256) totalApproveOfCert;
     mapping(uint256 => CERT_STATUSES) certStatus;
 
     string[] certForms;
     mapping(uint256 => uint256) public totalCertForm;
     mapping(uint256 => uint256) public certFormMinted;
+
+    event Mint(address indexed to, string url);
     
     constructor() {
         roles[msg.sender].push(ROLES.OWNER);
@@ -252,22 +255,32 @@ contract CertManagement is CertERC721 {
     }
 
     function addCert(address _to, string memory _url) external {
-        certStatus[certs.length] = CERT_STATUSES.PENDING;
-        certs.push(Cert({
+        uint256 length = certsPending.length;
+        certStatus[length] = CERT_STATUSES.PENDING;
+        certFormMinted[length]++;
+        certsPending.push(Cert({
             to: _to,
             url: _url
         }));
+        
+    }
+
+    function getCertsPending() external view returns(Cert[] memory) {
+        return certsPending;
     }
 
     function approveCert(uint256 certIndex) external {
-        require(certIndex < certs.length, "CERT: INVALID_RANGE");
-        require(!_hasRole(msg.sender, ROLES.CENSOR), "CENSOR: UNAUTHOZIRED");
+        require(certIndex < certsPending.length, "CERT: INVALID_RANGE");
+        require(_hasRole(msg.sender, ROLES.CENSOR), "CENSOR: UNAUTHOZIRED");
         require(certStatus[certIndex] == CERT_STATUSES.PENDING, "CENSOR: ONLY_APPROVE_FOR_PENDING_CERT");
         totalApproveOfCert[certIndex]++;
         if(totalApproveOfCert[certIndex] > totalCensors/2) {
-            certStatus[certIndex];
-            Cert memory _cert = certs[certIndex];
+            delete certStatus[certIndex];
+            Cert memory _cert = certsPending[certIndex];
             mint(_cert.to, _cert.url);
+            emit Mint(_cert.to, _cert.url);
+            certsPending[certIndex] = certsPending[certsPending.length - 1];
+            certsPending.pop();
         }
     }
 }

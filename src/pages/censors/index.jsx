@@ -1,6 +1,7 @@
 import { Button } from "@chakra-ui/button";
 import { Box, HStack } from "@chakra-ui/layout";
 import { Select } from "@chakra-ui/select";
+import { Spinner } from "@chakra-ui/spinner";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
 import { GENDER } from "configs";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
@@ -15,20 +16,26 @@ const certTypes = {
 const Censors = () => {
   const { account, library } = useActiveWeb3React();
 
+  const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(true);
   const [selectedCertType, setSelectedCertType] = useState(certTypes.pending);
   const [certsPending, setCertsPending] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (library) {
-      getCertsPending(library)
-        .then(setCertsPending)
-        .catch((err) => {
+    (async () => {
+      if (library) {
+        try {
+          const certs = await getCertsPending(library);
+          setCertsPending(certs);
+          setLoading(false);
+        } catch (error) {
           !!certsPending?.length && setCertsPending([]);
-          console.error(err);
-        });
-    }
+          setLoading(false);
+          console.error(error);
+        }
+      }
+    })();
   }, [library, refresh]);
 
   const handleAcceptCert = async (certIdx) => {
@@ -82,40 +89,50 @@ const Censors = () => {
           </Tr>
         </Thead>
         <Tbody>
-          {certsPending.map((censor, idx) => (
-            <Tr key={idx}>
-              <Td>{idx + 1}</Td>
-              <Td>{censor.to}</Td>
-              <Td>
-                <Box>Name: {censor.name}</Box>
-                <Box>
-                  Gender:{" "}
-                  {Object.keys(GENDER).find((g) => GENDER[g] === censor.gender)}
-                </Box>
-                <Box>Date of birth: {censor.dateOfBirth}</Box>
-                <Box>Graduate grade: {censor.graduateGrade}</Box>
-                <Box>Minted where: {censor.mintWhere}</Box>
-              </Td>
-              <Td>
-                <Box>
-                  Specialized training: {censor.cert?.specializedTraining}
-                </Box>
-                <Box>Year: {censor.cert?.year}</Box>
-                <Box>Study mode: {censor.cert?.modeStudy}</Box>
-              </Td>
-              <Td isNumeric>
-                <Button
-                  colorScheme="teal"
-                  mr="2"
-                  onClick={() => handleAcceptCert(idx)}
-                  isLoading={submitting}
-                >
-                  Approve
-                </Button>
-                <Button colorScheme="red">Decline</Button>
+          {loading ? (
+            <Tr>
+              <Td colSpan="5">
+                <Spinner />
               </Td>
             </Tr>
-          ))}
+          ) : (
+            certsPending.map((censor, idx) => (
+              <Tr key={idx}>
+                <Td>{idx + 1}</Td>
+                <Td>{censor.to}</Td>
+                <Td>
+                  <Box>Name: {censor.name}</Box>
+                  <Box>
+                    Gender:{" "}
+                    {Object.keys(GENDER).find(
+                      (g) => GENDER[g] === censor.gender
+                    )}
+                  </Box>
+                  <Box>Date of birth: {censor.dateOfBirth}</Box>
+                  <Box>Graduate grade: {censor.graduateGrade}</Box>
+                  <Box>Minted where: {censor.mintWhere}</Box>
+                </Td>
+                <Td>
+                  <Box>
+                    Specialized training: {censor.cert?.specializedTraining}
+                  </Box>
+                  <Box>Year: {censor.cert?.year}</Box>
+                  <Box>Study mode: {censor.cert?.modeStudy}</Box>
+                </Td>
+                <Td isNumeric>
+                  <Button
+                    colorScheme="teal"
+                    mr="2"
+                    onClick={() => handleAcceptCert(idx)}
+                    isLoading={submitting}
+                  >
+                    Approve
+                  </Button>
+                  <Button colorScheme="red">Reject</Button>
+                </Td>
+              </Tr>
+            ))
+          )}
         </Tbody>
       </Table>
     </Box>
