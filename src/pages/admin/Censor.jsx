@@ -127,7 +127,7 @@ const Censor = () => {
                 <Button colorScheme="teal" mr="2" onClick={onOpen}>
                   Edit
                 </Button>
-                <Button colorScheme="red">Disable</Button>
+                {/* <Button colorScheme="red">Disable</Button> */}
               </Td>
             </Tr>
           ))}

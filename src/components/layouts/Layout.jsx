@@ -110,7 +110,7 @@ export const Layout = ({ children }) => {
           </Button>
         )}
       </HStack>
-      <Box minH="calc(100vh - 7em)" px="8" py="4" pos="relative">
+      <Box minH="calc(100vh - 10em)" px="8" py="4" pos="relative">
         {children}
       </Box>
 

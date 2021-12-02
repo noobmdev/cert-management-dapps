@@ -184,7 +184,8 @@ const Cert = () => {
               <Tr>
                 <Th>STT</Th>
                 <Th>Name</Th>
-                <Th isNumeric>Actions</Th>
+                <Th>Vietnamese Name</Th>
+                {/* <Th isNumeric>Actions</Th> */}
               </Tr>
             </Thead>
             <Tbody>
@@ -192,9 +193,10 @@ const Cert = () => {
                 <Tr key={idx}>
                   <Td>{idx + 1}</Td>
                   <Td>{censor.name}</Td>
-                  <Td isNumeric>
+                  <Td>{censor.vnName}</Td>
+                  {/* <Td isNumeric>
                     <Button colorScheme="red">Disable</Button>
-                  </Td>
+                  </Td> */}
                 </Tr>
               ))}
             </Tbody>
@@ -234,7 +236,7 @@ const Cert = () => {
                     >
                       Mint
                     </Button>
-                    <Button colorScheme="red">Disable</Button>
+                    {/* <Button colorScheme="red">Disable</Button> */}
                   </Td>
                 </Tr>
               ))}
