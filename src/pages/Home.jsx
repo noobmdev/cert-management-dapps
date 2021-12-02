@@ -1,13 +1,26 @@
-import { VStack } from "@chakra-ui/layout";
-import { Select } from "@chakra-ui/react";
+import { Input, InputGroup, InputRightElement } from "@chakra-ui/input";
+import { Box, VStack } from "@chakra-ui/layout";
+import { Select } from "@chakra-ui/select";
 import { ROLES } from "configs";
 import { GlobalContext } from "context/GlobalContext";
-import React, { useContext } from "react";
+import React, { useContext, useRef, useState } from "react";
 import { useHistory } from "react-router";
+import { FiSearch } from "react-icons/fi";
+import Icon from "@chakra-ui/icon";
+import { isAddress } from "@ethersproject/address";
 
 const Home = () => {
   const history = useHistory();
   const { isAuthenticated, user } = useContext(GlobalContext);
+
+  const [searchInput, setSearchInput] = useState();
+
+  const handleSearch = () => {
+    if (!searchInput || !isAddress(searchInput))
+      return alert("Invalid address");
+
+    history.push(`/users/${searchInput}`);
+  };
 
   return (
     <VStack pos="fixed" top="50%" left="50%" transform="translate(-50%,-50%)">
@@ -64,6 +77,22 @@ const Home = () => {
               </option>
             ))}
       </Select>
+
+      <Box>OR</Box>
+
+      <InputGroup>
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search certificate by address"
+          color="black"
+        />
+        <InputRightElement
+          children={
+            <Icon onClick={handleSearch} as={FiSearch} cursor="pointer" />
+          }
+        />
+      </InputGroup>
     </VStack>
   );
 };

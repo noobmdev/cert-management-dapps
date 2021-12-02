@@ -15,8 +15,66 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
 import React, { useEffect, useState } from "react";
 import { isAddress } from "@ethersproject/address";
-import { addCensor, getCensors } from "utils/getCertContract";
+import {
+  addCensor,
+  deleteCensor,
+  editCensor,
+  getCensors,
+} from "utils/getCertContract";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
+
+const CensorItem = ({
+  idx,
+  censor,
+  showEditModal,
+  setRefresh,
+  handleCloseModal,
+}) => {
+  const { account, library } = useActiveWeb3React();
+
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (idx) => {
+    try {
+      if (!account || !library || typeof idx !== "number" || deleting) return;
+
+      setDeleting(true);
+      await deleteCensor(library, account, [idx]);
+
+      setRefresh((pre) => !pre);
+      setDeleting(false);
+      handleCloseModal();
+    } catch (error) {
+      setDeleting(false);
+      console.error(error);
+    }
+  };
+
+  return (
+    <Tr>
+      <Td>{idx + 1}</Td>
+      <Td>{censor.name}</Td>
+      <Td>{censor.email}</Td>
+      <Td>{censor.addr}</Td>
+      <Td isNumeric>
+        <Button
+          colorScheme="teal"
+          mr="2"
+          onClick={() => showEditModal(censor, idx)}
+        >
+          Edit
+        </Button>
+        <Button
+          colorScheme="red"
+          isLoading={deleting}
+          onClick={() => handleDelete(idx)}
+        >
+          Delete
+        </Button>
+      </Td>
+    </Tr>
+  );
+};
 
 const Censor = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -27,6 +85,7 @@ const Censor = () => {
   const [addr, setAddr] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [selectedCensor, setSelectedCensor] = useState();
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -40,25 +99,57 @@ const Censor = () => {
 
       if (!isAddress(addr)) return alert("Enter valid address");
       setSubmitting(true);
-      await addCensor(library, account, [addr, name, email]);
+      if (selectedCensor) {
+        await editCensor(library, account, [
+          selectedCensor.idx,
+          addr,
+          name,
+          email,
+        ]);
+      } else {
+        await addCensor(library, account, [addr, name, email]);
+      }
+
       setRefresh((pre) => !pre);
-      setAddr("");
-      setName("");
-      setEmail("");
+
       setSubmitting(false);
-      onClose();
+      handleCloseModal();
     } catch (error) {
       setSubmitting(false);
       console.error(error);
     }
   };
 
+  const showEditModal = (censor, idx) => {
+    const { name, email, addr } = censor;
+    setName(name);
+    setEmail(email);
+    setAddr(addr);
+    setSelectedCensor({ censor, idx });
+  };
+
+  useEffect(() => {
+    if (selectedCensor) {
+      onOpen();
+    }
+  }, [selectedCensor]);
+
+  const handleCloseModal = () => {
+    if (selectedCensor) setSelectedCensor(undefined);
+    setAddr("");
+    setName("");
+    setEmail("");
+    onClose();
+  };
+
   return (
     <Box>
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={handleCloseModal}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Add a new censor</ModalHeader>
+          <ModalHeader>
+            {selectedCensor ? "Edit censor" : "Add a new censor"}
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing="4">
@@ -118,18 +209,14 @@ const Censor = () => {
         </Thead>
         <Tbody>
           {censors.map((censor, idx) => (
-            <Tr key={idx}>
-              <Td>{idx + 1}</Td>
-              <Td>{censor.name}</Td>
-              <Td>{censor.email}</Td>
-              <Td>{censor.addr}</Td>
-              <Td isNumeric>
-                <Button colorScheme="teal" mr="2" onClick={onOpen}>
-                  Edit
-                </Button>
-                {/* <Button colorScheme="red">Disable</Button> */}
-              </Td>
-            </Tr>
+            <CensorItem
+              key={idx}
+              idx={idx}
+              censor={censor}
+              showEditModal={showEditModal}
+              setRefresh={setRefresh}
+              handleCloseModal={handleCloseModal}
+            />
           ))}
         </Tbody>
       </Table>

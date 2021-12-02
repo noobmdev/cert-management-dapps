@@ -30,6 +30,8 @@ import {
   addCert,
   addCertForm,
   addSpecializedTraining,
+  deleteCertForm,
+  deleteSpecializedTraining,
   getCertForms,
   getSpecializedTrainings,
 } from "utils/getCertContract";
@@ -55,13 +57,19 @@ const Cert = () => {
   const [specializedTrainings, setSpecializedTrainings] = useState([]);
   const [certs, setCerts] = useState([]);
   const [specializedTrainingName, setSpecializedTrainingName] = useState("");
+  const [specializedTrainingVnName, setSpecializedTrainingVnName] =
+    useState("");
+
+  const [selectedSpecializedTraining, setSelectedSpecializedTraining] =
+    useState();
   const [certData, setCertData] = useState({
-    specializedTraining: "",
+    specializedTraining: null,
     modeStudy: STUDY_MODES.fullTime,
     total: 1,
     year: new Date().getFullYear(),
   });
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [selectedCertForm, setSelectedCertForm] = useState();
   const [certMintData, setCertMintData] = useState({
     addr: "",
@@ -89,14 +97,32 @@ const Cert = () => {
       if (!specializedTrainingName) return alert("Fill all required fields");
 
       setSubmitting(true);
-      await addSpecializedTraining(library, account, [specializedTrainingName]);
+      await addSpecializedTraining(library, account, [
+        specializedTrainingName,
+        specializedTrainingVnName,
+      ]);
       setRefresh((pre) => !pre);
       setSpecializedTrainingName("");
+      setSpecializedTrainingVnName("");
 
       setSubmitting(false);
       onClose();
     } catch (error) {
       setSubmitting(false);
+      console.error(error);
+    }
+  };
+
+  const handleDeleteSpecializedTraining = async (idx) => {
+    try {
+      if (!account || !library || typeof idx !== "number") return;
+
+      setDeleting(true);
+      await deleteSpecializedTraining(library, account, [idx]);
+      setRefresh((pre) => !pre);
+      setDeleting(false);
+    } catch (error) {
+      setDeleting(false);
       console.error(error);
     }
   };
@@ -109,11 +135,12 @@ const Cert = () => {
 
       const { total, ..._certData } = certData;
       setSubmitting(true);
+      console.log(_certData);
       const url = await uploadIPFS(_certData);
       await addCertForm(library, account, [url, total]);
       setRefreshCert((pre) => !pre);
       setCertData({
-        specializedTraining: "",
+        specializedTraining: null,
         modeStudy: STUDY_MODES.fullTime,
         total: 1,
         year: new Date().getFullYear(),
@@ -122,6 +149,20 @@ const Cert = () => {
       onClose();
     } catch (error) {
       setSubmitting(false);
+      console.error(error);
+    }
+  };
+
+  const handleDeleteCertForm = async (idx) => {
+    try {
+      if (!account || !library || typeof idx !== "number") return;
+
+      setDeleting(true);
+      await deleteCertForm(library, account, [idx]);
+      setRefreshCert((pre) => !pre);
+      setDeleting(false);
+    } catch (error) {
+      setDeleting(false);
       console.error(error);
     }
   };
@@ -185,7 +226,7 @@ const Cert = () => {
                 <Th>STT</Th>
                 <Th>Name</Th>
                 <Th>Vietnamese Name</Th>
-                {/* <Th isNumeric>Actions</Th> */}
+                <Th isNumeric>Actions</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -194,9 +235,15 @@ const Cert = () => {
                   <Td>{idx + 1}</Td>
                   <Td>{censor.name}</Td>
                   <Td>{censor.vnName}</Td>
-                  {/* <Td isNumeric>
-                    <Button colorScheme="red">Disable</Button>
-                  </Td> */}
+                  <Td isNumeric>
+                    <Button
+                      colorScheme="red"
+                      onClick={() => handleDeleteSpecializedTraining(idx)}
+                      isLoading={deleting}
+                    >
+                      Delete
+                    </Button>
+                  </Td>
                 </Tr>
               ))}
             </Tbody>
@@ -220,7 +267,10 @@ const Cert = () => {
               {certs.map((cert, idx) => (
                 <Tr key={idx}>
                   <Td>{idx + 1}</Td>
-                  <Td>{cert.specializedTraining}</Td>
+                  <Td>
+                    <Box>{cert.specializedTraining?.name}</Box>
+                    <Box>{cert.specializedTraining?.vnName}</Box>
+                  </Td>
                   <Td>{cert.year}</Td>
                   <Td>{cert.total?.toString()}</Td>
                   <Td>{cert.minted?.toString()}</Td>
@@ -236,7 +286,13 @@ const Cert = () => {
                     >
                       Mint
                     </Button>
-                    {/* <Button colorScheme="red">Disable</Button> */}
+                    <Button
+                      colorScheme="red"
+                      isLoading={deleting}
+                      onClick={() => handleDeleteCertForm(idx)}
+                    >
+                      Delete
+                    </Button>
                   </Td>
                 </Tr>
               ))}
@@ -253,15 +309,26 @@ const Cert = () => {
     switch (selectedItem) {
       case certMenu.certificateType:
         return (
-          <FormControl isRequired>
-            <FormLabel>Name</FormLabel>
-            <Input
-              value={specializedTrainingName}
-              onChange={(e) => setSpecializedTrainingName(e.target.value)}
-              name="name"
-              placeholder="Name"
-            />
-          </FormControl>
+          <>
+            <FormControl isRequired>
+              <FormLabel>Name</FormLabel>
+              <Input
+                value={specializedTrainingName}
+                onChange={(e) => setSpecializedTrainingName(e.target.value)}
+                name="name"
+                placeholder="Name"
+              />
+            </FormControl>
+            <FormControl isRequired>
+              <FormLabel>Vietnamese name</FormLabel>
+              <Input
+                value={specializedTrainingVnName}
+                onChange={(e) => setSpecializedTrainingVnName(e.target.value)}
+                name="vnName"
+                placeholder="Vietnamese name"
+              />
+            </FormControl>
+          </>
         );
 
       case certMenu.certificates:
@@ -270,20 +337,30 @@ const Cert = () => {
             <FormControl isRequired>
               <FormLabel>Specialized Training</FormLabel>
               <Select
-                value={certData.specializedTraining}
-                onChange={(e) =>
-                  setCertData((pre) => ({
-                    ...pre,
-                    specializedTraining: e.target.value,
-                  }))
-                }
+                value={selectedSpecializedTraining}
+                onChange={(e) => {
+                  const { value } = e.target;
+                  setSelectedSpecializedTraining(value);
+                  const specializedTraining = specializedTrainings.find(
+                    (s) => s.id.toString() === value
+                  );
+                  if (specializedTraining) {
+                    setCertData((pre) => ({
+                      ...pre,
+                      specializedTraining: {
+                        name: specializedTraining.name,
+                        vnName: specializedTraining.vnName,
+                      },
+                    }));
+                  }
+                }}
               >
                 <option value="" style={{ display: "none" }}>
                   Select specialized Training
                 </option>
                 {specializedTrainings.map((v, idx) => (
-                  <option key={idx} value={v.name}>
-                    {v.name}
+                  <option key={idx} value={v.id}>
+                    {v.name} - {v.vnName}
                   </option>
                 ))}
               </Select>

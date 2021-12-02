@@ -102,7 +102,10 @@ export const Layout = ({ children }) => {
         </Link>
         {isConnected ? (
           <Link to="/">
-            <Button colorScheme="teal">{account}</Button>
+            <Button colorScheme="teal">
+              {account.slice(0, 6)}...
+              {account.slice(account.length - 6, account.length)}
+            </Button>
           </Link>
         ) : (
           <Button colorScheme="teal" onClick={onOpen}>

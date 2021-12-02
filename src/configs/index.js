@@ -1,13 +1,17 @@
-export const CERT_ADDRESS = "0xD30E386A1b4a120802a88402c2b79108f415A75C";
+export const CERT_ADDRESS = "0x81eBBCE29FfBB007248C87903851499C0c8F84a0";
 
 export const CERT_METHODS = {
   getOwnerRoles: "getOwnerRoles",
   addCensor: "addCensor",
+  editCensor: "editCensor",
+  deleteCensor: "deleteCensor",
   totalCensors: "totalCensors",
   censors: "censors",
   addSpecializedTraining: "addSpecializedTraining",
   getSpecializedTrainings: "getSpecializedTrainings",
+  deleteSpecializedTraining: "deleteSpecializedTraining",
   addCertForm: "addCertForm",
+  deleteCertForm: "deleteCertForm",
   getCertForms: "getCertForms",
   totalCertForm: "totalCertForm",
   certFormMinted: "certFormMinted",
@@ -17,6 +21,7 @@ export const CERT_METHODS = {
   balanceOf: "balanceOf",
   tokenOfOwnerByIndex: "tokenOfOwnerByIndex",
   tokenURI: "tokenURI",
+  REFACTOR_NAME: "REFACTOR_NAME",
 };
 
 export const ROLES = {

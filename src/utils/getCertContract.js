@@ -16,6 +16,18 @@ export const addCensor = async (library, account, args = []) => {
   return callContract(certContract, CERT_METHODS.addCensor, args);
 };
 
+export const editCensor = async (library, account, args = []) => {
+  if (!library || !account) return;
+  const certContract = getCertContract(library, account);
+  return callContract(certContract, CERT_METHODS.editCensor, args);
+};
+
+export const deleteCensor = async (library, account, args = []) => {
+  if (!library || !account) return;
+  const certContract = getCertContract(library, account);
+  return callContract(certContract, CERT_METHODS.deleteCensor, args);
+};
+
 const getTotalCensor = async (library) => {
   if (!library) return;
   const certContract = getCertContract(library);
@@ -42,6 +54,20 @@ export const addSpecializedTraining = async (library, account, args = []) => {
   return callContract(certContract, CERT_METHODS.addSpecializedTraining, args);
 };
 
+export const deleteSpecializedTraining = async (
+  library,
+  account,
+  args = []
+) => {
+  if (!library || !account) return;
+  const certContract = getCertContract(library, account);
+  return callContract(
+    certContract,
+    CERT_METHODS.deleteSpecializedTraining,
+    args
+  );
+};
+
 export const getSpecializedTrainings = async (library) => {
   if (!library) return;
   const certContract = getCertContract(library);
@@ -57,6 +83,12 @@ export const addCertForm = async (library, account, args = []) => {
   if (!library || !account) return;
   const certContract = getCertContract(library, account);
   return callContract(certContract, CERT_METHODS.addCertForm, args);
+};
+
+export const deleteCertForm = async (library, account, args = []) => {
+  if (!library || !account) return;
+  const certContract = getCertContract(library, account);
+  return callContract(certContract, CERT_METHODS.deleteCertForm, args);
 };
 
 export const getCertForms = async (library) => {
@@ -132,4 +164,10 @@ export const getOwnerCerts = async (library, account) => {
       return { ...res.data, owner: account };
     })
   );
+};
+
+export const getRefactorName = async (library) => {
+  if (!library) return;
+  const certContract = getCertContract(library);
+  return callContract(certContract, CERT_METHODS.REFACTOR_NAME);
 };
