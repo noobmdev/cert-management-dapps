@@ -185,6 +185,7 @@ contract CertManagement is CertERC721 {
     struct SpecializedTraining {
         uint256 id;
         string name;
+        string vnName;
     }
 
     struct Cert {
@@ -192,13 +193,14 @@ contract CertManagement is CertERC721 {
         string url;
     }
     
+    string public REFACTOR_NAME = "Nguyen Van A";
+
     mapping(address => ROLES[]) roles;
 
     mapping(uint256 => Censor) public censors;
     uint256 public totalCensors;
     
     SpecializedTraining[] public specializedTrainings;
-    mapping(string => bool) private specializedTrainingsAdded;
 
     Cert[] certsPending;
     mapping(uint256 => mapping(address => CERT_PENDING_STATUSES)) certsPendingStatus;
@@ -214,6 +216,10 @@ contract CertManagement is CertERC721 {
     constructor() {
         roles[msg.sender].push(ROLES.OWNER);
     }
+
+    function setRefactorName(string memory _name) external {
+        REFACTOR_NAME = _name;
+    }
     
     function _hasRole(address _consor, ROLES _role) private view returns(bool) {
         ROLES[] memory _roles = roles[_consor];
@@ -224,27 +230,50 @@ contract CertManagement is CertERC721 {
     }
     
     function addCensor(address _addr, string memory _name, string memory _email) external {
-            require(!_hasRole(_addr, ROLES.CENSOR), "CENSOR: UNIQUE_CENSOR_ADDRESSS");
-            roles[_addr].push(ROLES.CENSOR);
-            censors[totalCensors] = Censor({
-                addr: _addr,
-                name: _name,
-                email: _email
-            });
-            totalCensors++;
+        require(!_hasRole(_addr, ROLES.CENSOR), "CENSOR: UNIQUE_CENSOR_ADDRESSS");
+        roles[_addr].push(ROLES.CENSOR);
+        censors[totalCensors] = Censor({
+            addr: _addr,
+            name: _name,
+            email: _email
+        });
+        totalCensors++;
+    }
+
+    function editCensor(uint256 _idx, address _addr, string memory _name, string memory _email) external {
+        require(censors[_idx].addr == _addr || !_hasRole(_addr, ROLES.CENSOR), "CENSOR: UNIQUE_CENSOR_ADDRESSS");
+        censors[_idx] = Censor({
+            addr: _addr,
+            name: _name,
+            email: _email
+        });
+    } 
+
+    function deleteCensor(uint256 _idx) external {
+        delete roles[censors[_idx].addr];
+        if(_idx == totalCensors-1) {
+            delete censors[_idx];
+        } else {
+            censors[_idx] = censors[totalCensors-1];
+        }
+        totalCensors--;
     }
 
     function getOwnerRoles(address sender) external view returns(ROLES[] memory) {
         return roles[sender];
     }
      
-    function addSpecializedTraining(string memory _name) external {
-        require(!specializedTrainingsAdded[_name], "SPECIALIZED_TRAINING: already added");
+    function addSpecializedTraining(string memory _name, string memory _vnName) external {
         specializedTrainings.push(SpecializedTraining({
             id: specializedTrainings.length,
-            name: _name
+            name: _name,
+            vnName: _vnName
         }));
-        specializedTrainingsAdded[_name] = true;
+    }
+
+    function deleteSpecializedTraining(uint256 _idx) external {
+        specializedTrainings[_idx] = specializedTrainings[specializedTrainings.length-1];
+        specializedTrainings.pop();
     }
     
     function getSpecializedTrainings() external view returns(SpecializedTraining[] memory) {
@@ -257,14 +286,25 @@ contract CertManagement is CertERC721 {
         certForms.push(_url);
     }
 
+    function editCertForm(uint256 _idx, string memory _url, uint256 _total) external {
+        totalCertForm[_idx] = _total;
+        certForms[_idx] = _url;
+    }
+
+    function deleteCertForm(uint256 _idx) external {
+        delete totalCertForm[_idx];
+        certForms[_idx] = certForms[certForms.length-1];
+        certForms.pop();
+    }
+
     function getCertForms () external view returns(string[] memory) {
         return certForms;
     }
 
-    function addCert(address _to, string memory _url) external {
+    function addCert(address _to, uint256 certFormIndex, string memory _url) external {
         uint256 length = certsPending.length;
         certStatus[length] = CERT_STATUSES.PENDING;
-        certFormMinted[length]++;
+        certFormMinted[certFormIndex]++;
         certsPending.push(Cert({
             to: _to,
             url: _url

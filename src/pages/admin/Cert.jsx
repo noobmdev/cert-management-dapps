@@ -198,7 +198,7 @@ const Cert = () => {
         cert: selectedCertForm,
         date: Math.floor(Date.now() / 1000),
       });
-      await addCert(library, account, [addr, url]);
+      await addCert(library, account, [addr, selectedCertForm.idx, url]);
       setRefreshCert((pre) => !pre);
       setCertMintData({
         addr: "",
@@ -280,7 +280,7 @@ const Cert = () => {
                       colorScheme="teal"
                       mx="2"
                       onClick={() => {
-                        setSelectedCertForm(cert);
+                        setSelectedCertForm({ ...cert, idx });
                         onOpenMint();
                       }}
                     >
@@ -454,7 +454,8 @@ const Cert = () => {
                 <Box>
                   Mint certificate specialized training{" "}
                   <Box d="inline" fontSize="xl" fontWeight="bold">
-                    {selectedCertForm.specializedTraining}
+                    {selectedCertForm.specializedTraining?.name} -{" "}
+                    {selectedCertForm.specializedTraining?.vnName}
                   </Box>{" "}
                   year{" "}
                   <Box d="inline" fontSize="xl" fontWeight="bold">
