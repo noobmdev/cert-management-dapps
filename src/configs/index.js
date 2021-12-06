@@ -1,4 +1,4 @@
-export const CERT_ADDRESS = "0x81eBBCE29FfBB007248C87903851499C0c8F84a0";
+export const CERT_ADDRESS = "0x83ff1038c9182dB6Bf235a896ca694EE2bf10eeD";
 
 export const CERT_METHODS = {
   getOwnerRoles: "getOwnerRoles",
@@ -22,6 +22,7 @@ export const CERT_METHODS = {
   tokenOfOwnerByIndex: "tokenOfOwnerByIndex",
   tokenURI: "tokenURI",
   REFACTOR_NAME: "REFACTOR_NAME",
+  rejectCert: "rejectCert",
 };
 
 export const ROLES = {

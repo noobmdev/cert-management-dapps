@@ -143,14 +143,14 @@ contract CertERC721 is ERC721Enumerable, Ownable {
     function mint(
         address _to,
         string memory tokenURI_
-    ) internal {
+    ) public {
         uint256 _tokenId = totalSupply();
         _mint(_to, _tokenId);
         _setTokenURI(_tokenId, tokenURI_);
     }
     
     
-    function burn(uint256 _tokenId) internal {
+    function burn(uint256 _tokenId) public {
         _burn(_tokenId);
     }
 }
@@ -203,15 +203,17 @@ contract CertManagement is CertERC721 {
     SpecializedTraining[] public specializedTrainings;
 
     Cert[] certsPending;
-    mapping(uint256 => mapping(address => CERT_PENDING_STATUSES)) certsPendingStatus;
-    mapping(uint256 => uint256) totalApproveOfCert;
-    mapping(uint256 => CERT_STATUSES) certStatus;
+    mapping(uint256 => mapping(address => CERT_PENDING_STATUSES)) public certsPendingStatus;
+    mapping(uint256 => uint256)  public totalApproveOfCert;
+    mapping(uint256 => uint256)  public totalRejectOfCert;
+    mapping(uint256 => CERT_STATUSES)  public certStatus;
 
     string[] certForms;
     mapping(uint256 => uint256) public totalCertForm;
     mapping(uint256 => uint256) public certFormMinted;
 
     event Mint(address indexed to, string url);
+    event Reject(address indexed to, string url);
     
     constructor() {
         roles[msg.sender].push(ROLES.OWNER);
@@ -317,21 +319,51 @@ contract CertManagement is CertERC721 {
     }
 
     function approveCert(uint256 certIndex) external {
-        require(certIndex < certsPending.length, "CERT: INVALID_RANGE");
+        uint256 length = certsPending.length;
+        require(certIndex < length, "CERT: INVALID_RANGE");
         require(_hasRole(msg.sender, ROLES.CENSOR), "CENSOR: UNAUTHOZIRED");
         require(certStatus[certIndex] == CERT_STATUSES.PENDING, "CENSOR: ONLY_APPROVE_FOR_PENDING_CERT");
         require(certsPendingStatus[certIndex][msg.sender] == CERT_PENDING_STATUSES.DEFAULT, "CERT: REVIEWED");
         totalApproveOfCert[certIndex]++;
         certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.APPROVED;
         if(totalApproveOfCert[certIndex] > totalCensors/2) {
-            delete certsPendingStatus[certIndex][msg.sender];
-            delete certStatus[certIndex];
-            delete totalApproveOfCert[certIndex];
+            certsPendingStatus[certIndex][msg.sender] =  certsPendingStatus[length-1][msg.sender];
+            delete certsPendingStatus[length-1][msg.sender];
+            certStatus[certIndex] = certStatus[length-1];
+            delete certStatus[length-1];
+            totalApproveOfCert[certIndex] = totalApproveOfCert[length-1];
+            totalRejectOfCert[certIndex] = totalRejectOfCert[length-1];
+            delete totalApproveOfCert[length-1];
+            delete totalRejectOfCert[length-1];
             Cert memory _cert = certsPending[certIndex];
-            certsPending[certIndex] = certsPending[certsPending.length - 1];
+            certsPending[certIndex] = certsPending[length - 1];
             certsPending.pop();
             mint(_cert.to, _cert.url);
             emit Mint(_cert.to, _cert.url);
+        }
+    }
+
+    function rejectCert(uint256 certIndex) external {
+        uint256 length = certsPending.length;
+        require(certIndex < certsPending.length, "CERT: INVALID_RANGE");
+        require(_hasRole(msg.sender, ROLES.CENSOR), "CENSOR: UNAUTHOZIRED");
+        require(certStatus[certIndex] == CERT_STATUSES.PENDING, "CENSOR: ONLY_APPROVE_FOR_PENDING_CERT");
+        require(certsPendingStatus[certIndex][msg.sender] == CERT_PENDING_STATUSES.DEFAULT, "CERT: REVIEWED");
+        certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.REJECTED;
+        totalRejectOfCert[certIndex]++;
+        if(totalRejectOfCert[certIndex] > totalCensors/2) {
+            certsPendingStatus[certIndex][msg.sender] =  certsPendingStatus[length-1][msg.sender];
+            delete certsPendingStatus[length-1][msg.sender];
+            certStatus[certIndex] = certStatus[length-1];
+            delete certStatus[length-1];
+            totalApproveOfCert[certIndex] = totalApproveOfCert[length-1];
+            totalRejectOfCert[certIndex] = totalRejectOfCert[length-1];
+            delete totalApproveOfCert[length-1];
+            delete totalRejectOfCert[length-1];
+            Cert memory _cert = certsPending[certIndex];
+            certsPending[certIndex] = certsPending[length - 1];
+            certsPending.pop();
+            emit Reject(_cert.to, _cert.url);
         }
     }
 }

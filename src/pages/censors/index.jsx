@@ -1,12 +1,16 @@
 import { Button } from "@chakra-ui/button";
-import { Box, HStack } from "@chakra-ui/layout";
+import { Box, HStack, VStack } from "@chakra-ui/layout";
 import { Select } from "@chakra-ui/select";
 import { Spinner } from "@chakra-ui/spinner";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
 import { GENDER } from "configs";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
 import React, { useEffect, useState } from "react";
-import { approveCert, getCertsPending } from "utils/getCertContract";
+import {
+  approveCert,
+  getCertsPending,
+  rejectCert,
+} from "utils/getCertContract";
 
 const certTypes = {
   pending: "pending",
@@ -46,9 +50,39 @@ const Censors = () => {
       await approveCert(library, account, [certIdx]);
       setRefresh((pre) => !pre);
       setSubmitting(false);
+      alert("Approve success");
     } catch (error) {
       setSubmitting(false);
       console.error(error);
+      if (error.data?.message) {
+        alert(
+          error.data.message?.toString().replace("execution reverted: ", "") ??
+            "ERROR"
+        );
+      }
+    }
+  };
+
+  const [rejecting, setRejecting] = useState(false);
+
+  const handleRejectCert = async (certIdx) => {
+    if (!library || !account || submitting) return;
+
+    try {
+      setRejecting(true);
+      await rejectCert(library, account, [certIdx]);
+      setRefresh((pre) => !pre);
+      setRejecting(false);
+      alert("Reject success");
+    } catch (error) {
+      setRejecting(false);
+      console.error(error);
+      if (error.data?.message) {
+        alert(
+          error.data.message?.toString().replace("execution reverted: ", "") ??
+            "ERROR"
+        );
+      }
     }
   };
 
@@ -114,21 +148,31 @@ const Censors = () => {
                 </Td>
                 <Td>
                   <Box>
-                    Specialized training: {censor.cert?.specializedTraining}
+                    Specialized training:{" "}
+                    {censor.cert?.specializedTraining?.name} -{" "}
+                    {censor.cert?.specializedTraining?.vnName}
                   </Box>
                   <Box>Year: {censor.cert?.year}</Box>
                   <Box>Study mode: {censor.cert?.modeStudy}</Box>
                 </Td>
                 <Td isNumeric>
-                  <Button
-                    colorScheme="teal"
-                    mr="2"
-                    onClick={() => handleAcceptCert(idx)}
-                    isLoading={submitting}
-                  >
-                    Approve
-                  </Button>
-                  <Button colorScheme="red">Reject</Button>
+                  <VStack>
+                    <Button
+                      colorScheme="teal"
+                      mr="2"
+                      onClick={() => handleAcceptCert(idx)}
+                      isLoading={submitting}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      colorScheme="red"
+                      isLoading={rejecting}
+                      onClick={() => handleRejectCert(idx)}
+                    >
+                      Reject
+                    </Button>
+                  </VStack>
                 </Td>
               </Tr>
             ))

@@ -139,6 +139,12 @@ export const approveCert = async (library, account, args = []) => {
   return callContract(certContract, CERT_METHODS.approveCert, args);
 };
 
+export const rejectCert = async (library, account, args = []) => {
+  if (!library || !account) return;
+  const certContract = getCertContract(library, account);
+  return callContract(certContract, CERT_METHODS.rejectCert, args);
+};
+
 export const getOwnerCerts = async (library, account) => {
   if (!library || !account) return;
   const certContract = getCertContract(library, account);

@@ -92,7 +92,7 @@ const CertificateContent = React.forwardRef((props, ref) => {
             <Box fontSize="2xl">ADVANCED DIPLOMA</Box>
 
             <Box fontSize="xl" textTransform="uppercase">
-              {cert.cert?.specializedTraining}
+              {cert.cert?.specializedTraining?.name}
             </Box>
           </Box>
 
@@ -191,7 +191,7 @@ const CertificateContent = React.forwardRef((props, ref) => {
             <Box fontSize="2xl">BẰNG TỐT NGHIỆP</Box>
 
             <Box fontSize="xl" textTransform="uppercase">
-              {cert.cert?.specializedTraining}
+              {cert.cert?.specializedTraining?.vnName}
             </Box>
           </Box>
 
