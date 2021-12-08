@@ -318,6 +318,14 @@ contract CertManagement is CertERC721 {
         return certsPending;
     }
 
+    function _deleteCertsPendingStatus(uint256 certIndex, uint256 certPendingLength) private {
+        uint256 censorLength = totalCensors;
+        for(uint256 i = 0; i < censorLength; i++) {
+            certsPendingStatus[certIndex][censors[i].addr] =  certsPendingStatus[certPendingLength-1][censors[i].addr];
+            certsPendingStatus[certPendingLength-1][censors[i].addr];
+        }
+    }
+
     function approveCert(uint256 certIndex) external {
         uint256 length = certsPending.length;
         require(certIndex < length, "CERT: INVALID_RANGE");
@@ -327,8 +335,7 @@ contract CertManagement is CertERC721 {
         totalApproveOfCert[certIndex]++;
         certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.APPROVED;
         if(totalApproveOfCert[certIndex] > totalCensors/2) {
-            certsPendingStatus[certIndex][msg.sender] =  certsPendingStatus[length-1][msg.sender];
-            delete certsPendingStatus[length-1][msg.sender];
+            _deleteCertsPendingStatus(certIndex, length);
             certStatus[certIndex] = certStatus[length-1];
             delete certStatus[length-1];
             totalApproveOfCert[certIndex] = totalApproveOfCert[length-1];
@@ -352,8 +359,7 @@ contract CertManagement is CertERC721 {
         certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.REJECTED;
         totalRejectOfCert[certIndex]++;
         if(totalRejectOfCert[certIndex] > totalCensors/2) {
-            certsPendingStatus[certIndex][msg.sender] =  certsPendingStatus[length-1][msg.sender];
-            delete certsPendingStatus[length-1][msg.sender];
+            _deleteCertsPendingStatus(certIndex, length);
             certStatus[certIndex] = certStatus[length-1];
             delete certStatus[length-1];
             totalApproveOfCert[certIndex] = totalApproveOfCert[length-1];
