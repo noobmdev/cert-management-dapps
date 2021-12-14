@@ -177,3 +177,21 @@ export const getRefactorName = async (library) => {
   const certContract = getCertContract(library);
   return callContract(certContract, CERT_METHODS.REFACTOR_NAME);
 };
+
+export const getCertsMinted = async (library, certFormIndex) => {
+  if (!library) return;
+  const certContract = getCertContract(library);
+  const certMintedIds = await callContract(
+    certContract,
+    CERT_METHODS.getCertsMinted,
+    [certFormIndex]
+  );
+
+  return Promise.all(
+    certMintedIds.map(async (id) => {
+      const url = await callContract(certContract, CERT_METHODS.tokenURI, [id]);
+      const res = await axios.get(url);
+      return { ...res.data };
+    })
+  );
+};

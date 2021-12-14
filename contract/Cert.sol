@@ -211,6 +211,8 @@ contract CertManagement is CertERC721 {
     string[] certForms;
     mapping(uint256 => uint256) public totalCertForm;
     mapping(uint256 => uint256) public certFormMinted;
+    mapping(uint256 => uint256) public certMintedIndex;
+    mapping(uint256 => uint256[]) public certMinted;
 
     event Mint(address indexed to, string url);
     event Reject(address indexed to, string url);
@@ -307,6 +309,7 @@ contract CertManagement is CertERC721 {
         uint256 length = certsPending.length;
         certStatus[length] = CERT_STATUSES.PENDING;
         certFormMinted[certFormIndex]++;
+        certMintedIndex[length] = certFormIndex;
         certsPending.push(Cert({
             to: _to,
             url: _url
@@ -322,7 +325,8 @@ contract CertManagement is CertERC721 {
         uint256 censorLength = totalCensors;
         for(uint256 i = 0; i < censorLength; i++) {
             certsPendingStatus[certIndex][censors[i].addr] =  certsPendingStatus[certPendingLength-1][censors[i].addr];
-            certsPendingStatus[certPendingLength-1][censors[i].addr];
+            delete certsPendingStatus[certPendingLength-1][censors[i].addr];
+
         }
     }
 
@@ -334,7 +338,7 @@ contract CertManagement is CertERC721 {
         require(certsPendingStatus[certIndex][msg.sender] == CERT_PENDING_STATUSES.DEFAULT, "CERT: REVIEWED");
         totalApproveOfCert[certIndex]++;
         certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.APPROVED;
-        if(totalApproveOfCert[certIndex] > totalCensors/2) {
+        if(totalApproveOfCert[certIndex] >= totalCensors/2) {
             _deleteCertsPendingStatus(certIndex, length);
             certStatus[certIndex] = certStatus[length-1];
             delete certStatus[length-1];
@@ -345,6 +349,9 @@ contract CertManagement is CertERC721 {
             Cert memory _cert = certsPending[certIndex];
             certsPending[certIndex] = certsPending[length - 1];
             certsPending.pop();
+            uint256 certFormIndex = certMintedIndex[certIndex];
+            certMinted[certFormIndex].push(totalSupply());
+            certMintedIndex[certIndex] = certMintedIndex[length - 1];
             mint(_cert.to, _cert.url);
             emit Mint(_cert.to, _cert.url);
         }
@@ -358,7 +365,7 @@ contract CertManagement is CertERC721 {
         require(certsPendingStatus[certIndex][msg.sender] == CERT_PENDING_STATUSES.DEFAULT, "CERT: REVIEWED");
         certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.REJECTED;
         totalRejectOfCert[certIndex]++;
-        if(totalRejectOfCert[certIndex] > totalCensors/2) {
+        if(totalRejectOfCert[certIndex] >= totalCensors/2) {
             _deleteCertsPendingStatus(certIndex, length);
             certStatus[certIndex] = certStatus[length-1];
             delete certStatus[length-1];
@@ -369,6 +376,9 @@ contract CertManagement is CertERC721 {
             Cert memory _cert = certsPending[certIndex];
             certsPending[certIndex] = certsPending[length - 1];
             certsPending.pop();
+            uint256 certFormIndex = certMintedIndex[certIndex];
+            delete certMinted[certFormIndex];
+            delete certMintedIndex[certIndex];
             emit Reject(_cert.to, _cert.url);
         }
     }

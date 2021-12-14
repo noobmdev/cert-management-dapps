@@ -22,6 +22,7 @@ import {
 import { Select } from "@chakra-ui/select";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
 import { isAddress } from "@ethersproject/address";
+import Certificate from "components/Certificate";
 import { GENDER, GRADUATE_GRADE, STUDY_MODES } from "configs";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
 import React, { useEffect, useState } from "react";
@@ -33,6 +34,7 @@ import {
   deleteCertForm,
   deleteSpecializedTraining,
   getCertForms,
+  getCertsMinted,
   getSpecializedTrainings,
 } from "utils/getCertContract";
 
@@ -47,6 +49,11 @@ const Cert = () => {
     isOpen: isOpenMint,
     onOpen: onOpenMint,
     onClose: onCloseMint,
+  } = useDisclosure();
+  const {
+    isOpen: isOpenMinted,
+    onOpen: onOpenMinted,
+    onClose: onCloseMinted,
   } = useDisclosure();
   const { account, library } = useActiveWeb3React();
 
@@ -216,6 +223,14 @@ const Cert = () => {
     }
   };
 
+  const [certsMinted, setCertsMinted] = useState([]);
+
+  const handleOpenCertsMinted = (idx) => {
+    if (!library || isNaN(idx)) return;
+    onOpenMinted();
+    getCertsMinted(library, idx).then(setCertsMinted);
+  };
+
   const renderBody = () => {
     switch (selectedItem) {
       case certMenu.certificateType:
@@ -275,7 +290,12 @@ const Cert = () => {
                   <Td>{cert.total?.toString()}</Td>
                   <Td>{cert.minted?.toString()}</Td>
                   <Td isNumeric>
-                    {/* <Button colorScheme="telegram">View</Button> */}
+                    <Button
+                      colorScheme="telegram"
+                      onClick={() => handleOpenCertsMinted(idx)}
+                    >
+                      View
+                    </Button>
                     <Button
                       colorScheme="teal"
                       mx="2"
@@ -418,6 +438,21 @@ const Cert = () => {
 
   return (
     <Box>
+      <Modal isOpen={isOpenMinted} onClose={onCloseMinted} size="5xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Certs Minted</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing="4">
+              {certsMinted.map((cert, idx) => (
+                <Certificate key={idx} cert={cert} />
+              ))}
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
