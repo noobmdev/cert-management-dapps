@@ -4,12 +4,13 @@ import { Spinner } from "@chakra-ui/spinner";
 import Certificate from "components/Certificate";
 import { useActiveWeb3React } from "hooks/useActiveWeb3React";
 import React, { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router";
+import { useHistory, useLocation, useParams } from "react-router";
 import { getOwnerCerts, getRefactorName } from "utils/getCertContract";
 
 const Users = () => {
   const { address } = useParams();
   const { library } = useActiveWeb3React();
+  const history = useHistory();
 
   const [certs, setCerts] = useState([]);
   const [refactorName, setRefactorName] = useState("");
@@ -24,6 +25,10 @@ const Users = () => {
         setCerts(ownerCerts);
         setRefactorName(refactorName);
         setLoading(false);
+        if (ownerCerts?.length === 0) {
+          alert("You don't have any certificates");
+          history.push("/");
+        }
       } catch (error) {
         !!certs?.length && setCerts([]);
         setLoading(false);

@@ -20,6 +20,7 @@ import {
   NumberInputStepper,
 } from "@chakra-ui/number-input";
 import { Select } from "@chakra-ui/select";
+import { Spinner } from "@chakra-ui/spinner";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
 import { isAddress } from "@ethersproject/address";
 import Certificate from "components/Certificate";
@@ -225,10 +226,20 @@ const Cert = () => {
 
   const [certsMinted, setCertsMinted] = useState([]);
 
-  const handleOpenCertsMinted = (idx) => {
+  const [certMintedLoading, setCertMintedLoading] = useState(false);
+
+  const handleOpenCertsMinted = async (idx) => {
     if (!library || isNaN(idx)) return;
+    setCertMintedLoading(true);
     onOpenMinted();
-    getCertsMinted(library, idx).then(setCertsMinted);
+    try {
+      const certs = await getCertsMinted(library, idx);
+      setCertsMinted(certs);
+      setCertMintedLoading(false);
+    } catch (error) {
+      !!certsMinted?.length && setCertsMinted([]);
+      setCertMintedLoading(false);
+    }
   };
 
   const renderBody = () => {
@@ -444,10 +455,16 @@ const Cert = () => {
           <ModalHeader>Certs Minted</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <VStack spacing="4">
-              {certsMinted.map((cert, idx) => (
-                <Certificate key={idx} cert={cert} />
-              ))}
+            <VStack spacing="16" minH="20em">
+              {certMintedLoading ? (
+                <Box textAlign="center">
+                  <Spinner />
+                </Box>
+              ) : (
+                certsMinted.map((cert, idx) => (
+                  <Certificate key={idx} cert={cert} />
+                ))
+              )}
             </VStack>
           </ModalBody>
         </ModalContent>

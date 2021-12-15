@@ -306,6 +306,7 @@ contract CertManagement is CertERC721 {
     }
 
     function addCert(address _to, uint256 certFormIndex, string memory _url) external {
+        require(totalCertForm[certFormIndex] > certFormMinted[certFormIndex], "CERT: NOT_ENOUGH_CERT_TO_MINT");
         uint256 length = certsPending.length;
         certStatus[length] = CERT_STATUSES.PENDING;
         certFormMinted[certFormIndex]++;
@@ -338,7 +339,7 @@ contract CertManagement is CertERC721 {
         require(certsPendingStatus[certIndex][msg.sender] == CERT_PENDING_STATUSES.DEFAULT, "CERT: REVIEWED");
         totalApproveOfCert[certIndex]++;
         certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.APPROVED;
-        if(totalApproveOfCert[certIndex] >= totalCensors/2) {
+        if(totalApproveOfCert[certIndex] > totalCensors/2) {
             _deleteCertsPendingStatus(certIndex, length);
             certStatus[certIndex] = certStatus[length-1];
             delete certStatus[length-1];
@@ -365,7 +366,7 @@ contract CertManagement is CertERC721 {
         require(certsPendingStatus[certIndex][msg.sender] == CERT_PENDING_STATUSES.DEFAULT, "CERT: REVIEWED");
         certsPendingStatus[certIndex][msg.sender] = CERT_PENDING_STATUSES.REJECTED;
         totalRejectOfCert[certIndex]++;
-        if(totalRejectOfCert[certIndex] >= totalCensors/2) {
+        if(totalRejectOfCert[certIndex] > totalCensors/2) {
             _deleteCertsPendingStatus(certIndex, length);
             certStatus[certIndex] = certStatus[length-1];
             delete certStatus[length-1];
@@ -376,10 +377,11 @@ contract CertManagement is CertERC721 {
             Cert memory _cert = certsPending[certIndex];
             certsPending[certIndex] = certsPending[length - 1];
             certsPending.pop();
-            uint256 certFormIndex = certMintedIndex[certIndex];
-            delete certMinted[certFormIndex];
-            delete certMintedIndex[certIndex];
             emit Reject(_cert.to, _cert.url);
         }
+    }
+
+    function getCertsMinted(uint256 certFormIndex) external view returns(uint256[] memory) {
+        return certMinted[certFormIndex];
     }
 }
